@@ -1,0 +1,30 @@
+{
+  "server": {
+    "host": "0.0.0.0",
+    "port": 5000,
+    "debug": false
+  },
+  "video": {
+    "width": 640,
+    "height": 480,
+    "fps": 30,
+    "camera_index": 0
+  },
+  "detection": {
+    "confidence_threshold": 0.6,
+    "smoothing_frames": 5,
+    "alert_history_size": 100
+  },
+  "model": {
+    "model_path": "models/violence_detector.h5",
+    "scaler_path": "models/scaler.pkl",
+    "training_samples": 1000,
+    "training_epochs": 20,
+    "batch_size": 32
+  },
+  "features": {
+    "color_histogram_bins": 8,
+    "feature_extraction_size": 64,
+    "total_features": 128
+  }
+}
