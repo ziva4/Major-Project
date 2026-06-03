@@ -1,0 +1,105 @@
+header.header {
+  background: rgba(0, 0, 0, 0.5);
+  padding: 20px;
+  border-bottom: 2px solid #ff4444;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.header-content h1 {
+  font-size: 28px;
+  color: #ff4444;
+  font-weight: bold;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+}
+
+.subtitle {
+  font-size: 12px;
+  color: #aaa;
+  margin-top: 5px;
+}
+
+.status-indicator {
+  display: flex;
+  gap: 20px;
+  align-items: center;
+}
+
+.connection-status,
+.alert-status {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 20px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 5px;
+  font-weight: bold;
+  font-size: 14px;
+}
+
+.dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  animation: pulse 2s infinite;
+}
+
+.dot.connected {
+  background: #44ff44;
+  box-shadow: 0 0 10px #44ff44;
+}
+
+.dot.disconnected {
+  background: #ff4444;
+  box-shadow: 0 0 10px #ff4444;
+  animation: pulse-danger 0.5s infinite;
+}
+
+.dot.safe {
+  background: #44ff44;
+  box-shadow: 0 0 10px #44ff44;
+}
+
+.dot.danger {
+  background: #ff4444;
+  box-shadow: 0 0 15px #ff4444;
+  animation: pulse-danger 0.5s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+@keyframes pulse-danger {
+  0%, 100% {
+    opacity: 1;
+    box-shadow: 0 0 15px #ff4444;
+  }
+  50% {
+    opacity: 0.3;
+    box-shadow: 0 0 25px #ff4444;
+  }
+}
+
+@media (max-width: 768px) {
+  header.header {
+    flex-direction: column;
+    gap: 15px;
+    text-align: center;
+  }
+
+  .header-content h1 {
+    font-size: 20px;
+  }
+
+  .status-indicator {
+    width: 100%;
+    justify-content: center;
+  }
+}

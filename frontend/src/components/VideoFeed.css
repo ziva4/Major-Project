@@ -1,0 +1,139 @@
+.video-panel {
+  background: rgba(0, 0, 0, 0.7);
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+  border: 2px solid #444;
+}
+
+.video-title {
+  background: rgba(0, 0, 0, 0.8);
+  padding: 15px;
+  font-size: 16px;
+  font-weight: bold;
+  border-bottom: 2px solid #ff4444;
+}
+
+.video-container {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 4/3;
+  background: #000;
+  overflow: hidden;
+}
+
+.video-feed {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.video-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 15px;
+  pointer-events: none;
+}
+
+.confidence-display {
+  background: rgba(0, 0, 0, 0.7);
+  padding: 15px;
+  border-radius: 5px;
+  text-align: center;
+}
+
+.confidence-label {
+  font-size: 14px;
+  color: #aaa;
+  margin-bottom: 10px;
+}
+
+.confidence-bar {
+  width: 100%;
+  height: 30px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 15px;
+  overflow: hidden;
+  margin: 10px 0;
+  border: 2px solid #444;
+}
+
+.confidence-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #44ff44, #ffff44, #ff4444);
+  transition: width 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #000;
+  font-weight: bold;
+  font-size: 12px;
+}
+
+.confidence-text {
+  font-size: 16px;
+  font-weight: bold;
+  color: #fff;
+}
+
+.status-overlay {
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+}
+
+.status-badge {
+  background: rgba(0, 0, 0, 0.7);
+  padding: 12px 24px;
+  border-radius: 5px;
+  font-size: 16px;
+  font-weight: bold;
+  border: 2px solid #44ff44;
+  color: #44ff44;
+  text-shadow: 0 0 10px rgba(68, 255, 68, 0.5);
+}
+
+.status-badge.danger {
+  border-color: #ff4444;
+  color: #ff4444;
+  text-shadow: 0 0 10px rgba(255, 68, 68, 0.5);
+  animation: pulse-danger 0.5s infinite;
+}
+
+@keyframes pulse-danger {
+  0%, 100% {
+    opacity: 1;
+    box-shadow: 0 0 15px #ff4444;
+  }
+  50% {
+    opacity: 0.3;
+    box-shadow: 0 0 25px #ff4444;
+  }
+}
+
+@media (max-width: 768px) {
+  .video-panel {
+    border-radius: 5px;
+  }
+
+  .video-title {
+    font-size: 14px;
+    padding: 10px;
+  }
+
+  .confidence-display {
+    padding: 10px;
+  }
+
+  .status-badge {
+    font-size: 14px;
+    padding: 10px 20px;
+  }
+}
