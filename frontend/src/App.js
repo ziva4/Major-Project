@@ -10,7 +10,8 @@ function App() {
   const [socket, setSocket] = useState(null);
   const [detectionData, setDetectionData] = useState({
     confidence: 0,
-    is_violence_detected: false,
+        human_detected: false,
+        person_count: 0,
     confidence_threshold: 0.6,
     frame_count: 0,
     alerts_count: 0
@@ -85,7 +86,7 @@ function App() {
   return (
     <div className="App">
       <Header
-        isViolenceDetected={detectionData.is_violence_detected}
+        isHumanDetected={detectionData.human_detected}
         connected={connected}
       />
 
@@ -93,7 +94,7 @@ function App() {
         <div className="video-section">
           <VideoFeed
             confidence={detectionData.confidence}
-            isViolenceDetected={detectionData.is_violence_detected}
+            isHumanDetected={detectionData.human_detected}
           />
         </div>
 
@@ -101,7 +102,7 @@ function App() {
           <ControlPanel
             threshold={threshold}
             frameCount={detectionData.frame_count}
-            alertCount={detectionData.alerts_count}
+            alertCount={detectionData.person_count}
             onThresholdChange={handleThresholdChange}
           />
         </div>

@@ -1,0 +1,8 @@
+# Large local runtime and training artefacts
+backend/venv/
+backend/__pycache__/
+backend/data/
+backend/models/*.pt
+backend/yolo11n.pt
+backend/models/*.pkl
+backend/models/*.h5

@@ -10,14 +10,15 @@ CORS(app)
 socketio = SocketIO(app, cors_allowed_origins="*")
 
 # Initialize video processor
-processor = VideoProcessor(confidence_threshold=0.6)
+processor = VideoProcessor(confidence_threshold=0.50)
 
 def emit_data():
     """Emit detection data to connected clients"""
     while True:
         try:
             data = processor.get_data()
-            socketio.emit('detection_update', data, broadcast=True)
+            with app.app_context():
+                socketio.emit('detection_update', data, broadcast=True)
             time.sleep(0.5)
         except Exception as e:
             print(f"Error in emit_data: {e}")
@@ -60,9 +61,9 @@ def get_alerts():
 
 @app.route('/api/threshold', methods=['POST'])
 def set_threshold():
-    """Set confidence threshold"""
+    """Set minimum confidence required to show a detected person."""
     data = request.json
-    threshold = data.get('threshold', 0.6)
+    threshold = data.get('threshold', 0.5)
     processor.set_threshold(threshold)
     return jsonify({'success': True, 'threshold': processor.confidence_threshold})
 
@@ -90,7 +91,7 @@ def handle_update_request():
     emit('detection_update', data)
 
 if __name__ == '__main__':
-    print("🚨 Violence Detection System Starting...")
+    print("Person Detection System Starting...")
 
     # Start video processor
     try:

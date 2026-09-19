@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Violence Detection Dashboard - Police Alert System</title>
+    <title>Person Detection Dashboard</title>
     <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
     <style>
         * {
@@ -392,8 +392,8 @@
     <div class="container">
         <header>
             <div>
-                <h1>🚨 VIOLENCE DETECTION DASHBOARD</h1>
-                <p style="font-size: 12px; color: #aaa; margin-top: 5px;">Police Alert System</p>
+                <h1>PERSON DETECTION DASHBOARD</h1>
+                <p style="font-size: 12px; color: #aaa; margin-top: 5px;">Pretrained YOLO person detector</p>
             </div>
             <div class="status-indicator">
                 <span id="status-text">Monitoring...</span>
@@ -408,7 +408,7 @@
                     <img class="video-feed" id="video-stream" src="/video_feed" alt="Video Stream">
                     <div class="video-overlay">
                         <div class="confidence-display">
-                            <div style="font-size: 14px; color: #aaa;">Violence Confidence Level</div>
+                            <div style="font-size: 14px; color: #aaa;">Highest Person Confidence</div>
                             <div class="confidence-bar">
                                 <div class="confidence-fill" id="confidence-fill" style="width: 0%">0%</div>
                             </div>
@@ -437,7 +437,7 @@
                             <div class="stat-value" id="frame-count">0</div>
                         </div>
                         <div class="stat-box">
-                            <div class="stat-label">Total Alerts</div>
+                            <div class="stat-label">People Detected</div>
                             <div class="stat-value" id="alert-count">0</div>
                         </div>
                     </div>
@@ -505,19 +505,19 @@
             // Update status indicator
             const statusDot = document.getElementById('status-dot');
             const statusText = document.getElementById('status-text');
-            if (data.is_violence_detected) {
+            if (data.human_detected) {
                 statusDot.classList.remove('safe');
                 statusDot.classList.add('danger');
-                statusText.textContent = '⚠️ VIOLENCE DETECTED!';
+                statusText.textContent = 'Person detected';
             } else {
                 statusDot.classList.remove('danger');
                 statusDot.classList.add('safe');
-                statusText.textContent = '✓ Safe';
+                statusText.textContent = 'No people detected';
             }
 
             // Update stats
             document.getElementById('frame-count').textContent = data.frame_count;
-            document.getElementById('alert-count').textContent = data.alerts_count;
+            document.getElementById('alert-count').textContent = data.person_count;
         }
 
         // Threshold slider

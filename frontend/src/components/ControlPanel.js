@@ -34,7 +34,7 @@ function ControlPanel({
             <div className="stat-value">{frameCount}</div>
           </div>
           <div className="stat-box">
-            <div className="stat-label">Total Alerts</div>
+            <div className="stat-label">People Detected</div>
             <div className="stat-value">{alertCount}</div>
           </div>
         </div>
@@ -44,7 +44,7 @@ function ControlPanel({
         <h3>ℹ️ INFO</h3>
         <div className="info-text">
           <p><strong>System:</strong> Active</p>
-          <p><strong>Model:</strong> CNN Violence Detector</p>
+          <p><strong>Model:</strong> YOLO11n Person Detector</p>
           <p><strong>FPS:</strong> 30</p>
           <p><strong>Resolution:</strong> 640×480</p>
         </div>

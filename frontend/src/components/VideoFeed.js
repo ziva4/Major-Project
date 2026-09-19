@@ -1,7 +1,7 @@
 import React from 'react';
 import './VideoFeed.css';
 
-function VideoFeed({ confidence, isViolenceDetected }) {
+function VideoFeed({ confidence, isHumanDetected }) {
   return (
     <div className="video-panel">
       <div className="video-title">📹 Live Camera Feed</div>
@@ -13,7 +13,7 @@ function VideoFeed({ confidence, isViolenceDetected }) {
         />
         <div className="video-overlay">
           <div className="confidence-display">
-            <div className="confidence-label">Violence Confidence Level</div>
+            <div className="confidence-label">Highest Person Confidence</div>
             <div className="confidence-bar">
               <div
                 className="confidence-fill"
@@ -28,8 +28,8 @@ function VideoFeed({ confidence, isViolenceDetected }) {
           </div>
 
           <div className="status-overlay">
-            <div className={`status-badge ${isViolenceDetected ? 'danger' : 'safe'}`}>
-              {isViolenceDetected ? '🚨 VIOLENCE DETECTED!' : '✓ Normal Activity'}
+            <div className={`status-badge ${isHumanDetected ? 'danger' : 'safe'}`}>
+              {isHumanDetected ? 'PERSON DETECTED' : 'No people detected'}
             </div>
           </div>
         </div>

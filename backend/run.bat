@@ -9,8 +9,8 @@ REM Check Python version
 echo Checking Python installation...
 python --version
 
-REM Create virtual environment if not exists
-if not exist "venv" (
+REM Create or repair virtual environment if needed
+if not exist "venv\pyvenv.cfg" (
     echo Creating virtual environment...
     python -m venv venv
 )
@@ -23,17 +23,10 @@ REM Install dependencies
 echo Installing dependencies...
 pip install -r requirements.txt
 
-REM Train model if not exists
-if not exist "models\violence_detector.h5" (
-    echo.
-    echo Training violence detection model...
-    python train_model.py
-    echo.
-)
-
 REM Start Flask server
 echo.
-echo 🚀 Starting Violence Detection Dashboard...
+echo Starting Person Detection Dashboard...
+echo The pretrained YOLO model downloads once on first startup.
 echo 📊 Dashboard: http://localhost:5000
 echo 🎥 Camera Feed: http://localhost:5000/video_feed
 echo.

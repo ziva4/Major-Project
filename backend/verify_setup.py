@@ -56,8 +56,7 @@ def check_dependencies():
         'flask_cors': 'Flask-CORS',
         'cv2': 'OpenCV',
         'numpy': 'NumPy',
-        'tensorflow': 'TensorFlow',
-        'sklearn': 'scikit-learn',
+        'ultralytics': 'Ultralytics YOLO',
         'PIL': 'Pillow'
     }
 
@@ -134,7 +133,7 @@ def check_files():
     files_to_check = {
         'app.py': 'Main Flask app',
         'video_processor.py': 'Video processing module',
-        'train_model.py': 'Model training script',
+        'video_processor.py': 'YOLO person detection pipeline',
         'templates/index.html': 'Dashboard HTML',
         'config.json': 'Configuration file'
     }
@@ -151,12 +150,7 @@ def check_files():
     # Check for models directory
     if os.path.exists('models'):
         print(f"{check_mark()} models/ directory exists")
-        model_file = 'models/violence_detector.h5'
-        if os.path.exists(model_file):
-            size = os.path.getsize(model_file) / (1024**2)
-            print(f"    {check_mark()} Pre-trained model found ({size:.1f} MB)")
-        else:
-            print(f"    {warning_mark()} No pre-trained model (will train on first run)")
+        print(f"    {check_mark()} YOLO weights download automatically on first run")
     else:
         print(f"{warning_mark()} models/ directory will be created on first run")
 

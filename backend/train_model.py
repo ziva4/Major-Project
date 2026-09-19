@@ -14,6 +14,8 @@ class ViolenceDetectionModel:
     def __init__(self):
         self.model = None
         self.scaler = StandardScaler()
+        self.model_dir = os.path.join(os.path.dirname(__file__), 'models')
+        os.makedirs(self.model_dir, exist_ok=True)
 
     def create_features_from_frame(self, frame):
         """Extract features from a frame for violence detection"""
@@ -55,7 +57,11 @@ class ViolenceDetectionModel:
             [edge_density, num_contours]
         ])
 
-        return features[:128]  # Ensure 128 features
+        # Pad to 128 features
+        if len(features) < 128:
+            features = np.pad(features, (0, 128 - len(features)), mode='constant')
+
+        return features[:128]
 
     def build_model(self):
         """Build neural network model"""
@@ -83,19 +89,32 @@ class ViolenceDetectionModel:
         X = []
         y = []
 
-        # Generate normal frames (no violence)
+        # Generate normal frames (realistic video - people, objects, normal lighting)
         for _ in range(samples // 2):
-            frame = np.random.randint(0, 100, (480, 640, 3), dtype=np.uint8)
+            frame = np.ones((480, 640, 3), dtype=np.uint8) * np.random.randint(50, 150)
+            # Add natural texture
+            noise = np.random.normal(0, 10, (480, 640, 3)).astype(np.uint8)
+            frame = cv2.add(frame, noise)
+            # Add some edges (faces, objects)
+            for _ in range(np.random.randint(3, 8)):
+                x, y_pos = np.random.randint(0, 640), np.random.randint(0, 480)
+                cv2.circle(frame, (x, y_pos), np.random.randint(30, 80), (100, 100, 100), -1)
             features = self.create_features_from_frame(frame)
             X.append(features)
             y.append(0)
 
-        # Generate violent frames (high motion, high contrast)
+        # Generate violent frames (high motion, sharp edges, high contrast)
         for _ in range(samples // 2):
-            frame = np.random.randint(0, 255, (480, 640, 3), dtype=np.uint8)
-            # Add high-frequency noise for violence
-            noise = np.random.randint(0, 100, (480, 640, 3))
-            frame = cv2.add(frame, noise)
+            frame = np.ones((480, 640, 3), dtype=np.uint8) * np.random.randint(100, 180)
+            # Add high-frequency edges (violence indicators)
+            edges = np.random.randint(0, 255, (480, 640, 3), dtype=np.uint8)
+            edges = cv2.GaussianBlur(edges, (5, 5), 0)
+            frame = cv2.addWeighted(frame, 0.6, edges, 0.4, 0)
+            # Add sharp transitions
+            for _ in range(np.random.randint(5, 15)):
+                pt1 = (np.random.randint(0, 640), np.random.randint(0, 480))
+                pt2 = (np.random.randint(0, 640), np.random.randint(0, 480))
+                cv2.line(frame, pt1, pt2, (200, 50, 50), np.random.randint(2, 5))
             features = self.create_features_from_frame(frame)
             X.append(features)
             y.append(1)
@@ -135,26 +154,35 @@ class ViolenceDetectionModel:
 
     def predict(self, frame):
         """Predict violence in a frame"""
-        features = self.create_features_from_frame(frame)
-        features = self.scaler.transform([features])
-        confidence = float(self.model.predict(features, verbose=0)[0][0])
-        return confidence
+        if self.model is None:
+            return 0.0
+        try:
+            features = self.create_features_from_frame(frame)
+            features = self.scaler.transform([features])
+            confidence = float(self.model.predict(features, verbose=0)[0][0])
+            return max(0.0, min(1.0, confidence))
+        except Exception as e:
+            print(f"Prediction error: {e}")
+            return 0.0
 
     def save_model(self):
         """Save trained model"""
-        os.makedirs('models', exist_ok=True)
-        self.model.save('models/violence_detector.h5')
-        with open('models/scaler.pkl', 'wb') as f:
+        model_path = os.path.join(self.model_dir, 'violence_detector.h5')
+        scaler_path = os.path.join(self.model_dir, 'scaler.pkl')
+        self.model.save(model_path)
+        with open(scaler_path, 'wb') as f:
             pickle.dump(self.scaler, f)
-        print("Model saved to models/violence_detector.h5")
+        print(f"Model saved to {model_path}")
 
     def load_model(self):
         """Load trained model"""
-        if os.path.exists('models/violence_detector.h5'):
-            self.model = keras.models.load_model('models/violence_detector.h5')
-            with open('models/scaler.pkl', 'rb') as f:
+        model_path = os.path.join(self.model_dir, 'violence_detector.h5')
+        scaler_path = os.path.join(self.model_dir, 'scaler.pkl')
+        if os.path.exists(model_path) and os.path.exists(scaler_path):
+            self.model = keras.models.load_model(model_path)
+            with open(scaler_path, 'rb') as f:
                 self.scaler = pickle.load(f)
-            print("Model loaded from disk")
+            print(f"Model loaded from {model_path}")
             return True
         return False
 
