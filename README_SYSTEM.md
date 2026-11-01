@@ -48,6 +48,17 @@ backend/models/violence_action_model.pt
 
 ## Current trained-model baseline
 
+The table below describes the **original CNN/LSTM baseline**, which remains
+compatible with the current runtime. The selected offline experiment is now
+MobileNetV3 features + mean/std pooling + logistic regression (`C=0.01`):
+75.74% validation F1 and 76.00% accuracy / 78.89% precision / 71.00% recall /
+74.74% F1 on the 400-clip test set. It is saved in Drive and **not yet integrated
+into the dashboard**. PCA/KNN reached 74.56% validation F1 and was not tested.
+
+See [the complete experiment record](ML_TRAINING_EXPERIMENT.md) and
+[the main README's next steps](README.md#next-steps) for artifact locations,
+deployment work, and evaluation limitations.
+
 The current baseline was trained in Google Colab on RWF-2000 with the official
 `val` split held out for final testing. The configuration used a pretrained
 MobileNetV3 feature extractor, one LSTM layer with hidden size 64, dropout,

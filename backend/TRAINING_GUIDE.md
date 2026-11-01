@@ -1,5 +1,25 @@
 # Training the violence-action model
 
+## Latest experiment status (1 November 2026)
+
+This guide's commands train the existing CNN/LSTM implementation. They do not
+reproduce all later notebook experiments. The selected offline method is now
+frozen MobileNetV3-small + temporal mean/std pooling + fitted StandardScaler +
+logistic regression (`C=0.01`): validation F1 75.74%, test accuracy 76.00%,
+precision 78.89%, recall 71.00%, and F1 74.74%.
+
+Three follow-up CNN/LSTM configurations and a PCA/KNN comparison were recorded.
+KNN reached 74.56% validation F1; its test metrics were not run. All follow-up
+comparisons use the new saved split manifest, not a verified reconstruction of
+the original notebook's split. See the [experiment record](../ML_TRAINING_EXPERIMENT.md)
+for exact settings, per-epoch results, saved files, and limitations.
+
+Artifacts are in Drive under `ViolenceDetection/experiments/` and
+`ViolenceDetection/KNN_Experiment/`. The selected `.joblib` pipeline is not
+compatible with the current `.pt` runtime. Exporting/verifying the final bundle
+and notebook, then integrating the selected classifier into the backend and
+dashboard, are pending next steps. Do not retune using the reported test results.
+
 The app's YOLO model detects and tracks people. The optional CNN/LSTM model
 scores a **short video clip** as `normal` or `possible violence`; it does not
 identify people and should always be used with human review.

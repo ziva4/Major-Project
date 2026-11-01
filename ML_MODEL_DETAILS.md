@@ -1,8 +1,46 @@
 # Violence-Action Model Details
 
-This document describes the current PyTorch action-classification model. It
-replaces the earlier TensorFlow/Keras synthetic-data demo model, which is not
-used by the present dashboard workflow.
+This document describes the PyTorch CNN/LSTM model supported by the current
+dashboard runtime. It replaces the earlier TensorFlow/Keras synthetic-data
+demo, which is not used by that runtime.
+
+## Selected offline classifier (1 November 2026)
+
+The latest selected experiment replaces the LSTM with temporal mean/std
+pooling and logistic regression:
+
+```text
+16 uniformly sampled frames -> RGB resize 160 x 160 -> ImageNet normalisation
+-> frozen ImageNet MobileNetV3-small -> 576 features per frame
+-> temporal mean + population standard deviation -> 1,152 features per video
+-> fitted StandardScaler -> logistic regression (C=0.01) -> Fight score
+```
+
+It uses original ImageNet CNN weights, not the later fine-tuned CNN. Frame
+order is discarded by pooling. The selected scaler/classifier is a `.joblib`
+pipeline; a matching feature extractor and preprocessing metadata are required
+for inference. It is **not yet integrated into the dashboard**.
+
+| Method | Validation F1 | Test accuracy | Test precision | Test recall | Test F1 |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Follow-up frozen CNN + LSTM-64 | 66.27% | Not evaluated | Not evaluated | Not evaluated | Not evaluated |
+| Follow-up frozen CNN + LSTM-32 | 67.04% | Not evaluated | Not evaluated | Not evaluated | Not evaluated |
+| Limited fine-tuning + LSTM-32, best newly trained epoch reported | 66.3% | Not evaluated | Not evaluated | Not evaluated | Not evaluated |
+| Selected logistic regression | **75.74%** | **76.00%** | **78.89%** | **71.00%** | **74.74%** |
+| PCA + KNN comparison | 74.56% | Not evaluated | Not evaluated | Not evaluated | Not evaluated |
+
+The KNN pipeline uses training-fitted StandardScaler and PCA (32 components),
+then 11-neighbour, distance-weighted Euclidean voting. It reuses the same
+cached 1,152-dimensional features. Logistic regression remains selected.
+
+These follow-up methods share a newly saved 1,440/160 split; the original
+baseline's exact validation membership could not be recovered. The test set
+contains 400 official `val` clips. All reported classification metrics use
+threshold 0.5; that threshold is not a validated live alert policy.
+See [ML_TRAINING_EXPERIMENT.md](ML_TRAINING_EXPERIMENT.md) for histories,
+artifact paths, limitations, and deferred runtime integration.
+
+## Existing CNN/LSTM runtime
 
 ## Purpose
 
@@ -92,10 +130,9 @@ the video labels.
 | Regularisation | frozen backbone, dropout, early stopping |
 | Best-checkpoint metric | Validation F1 |
 
-KNN is not used. KNN compares a sample with nearby stored examples; it does
-not learn a time-aware visual representation of the video. The CNN + LSTM
-architecture is used because it can learn frame-level visual features and their
-movement over time.
+KNN is not part of this CNN/LSTM runtime. It was evaluated separately in the
+cached-feature experiment above. The LSTM learns frame-sequence relationships;
+KNN and logistic regression instead classify temporal feature summaries.
 
 ## Dataset split and metrics
 

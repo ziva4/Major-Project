@@ -35,6 +35,17 @@ count, model readiness, possible-violence score, and alerts.
 
 ## Action-model integration
 
+As of 1 November 2026, the selected offline experiment is MobileNetV3 feature
+pooling + logistic regression, with 76.00% test accuracy and 74.74% test F1.
+It is saved in Google Drive but is **not integrated into the backend or this
+frontend**. The instructions below apply only to the existing CNN/LSTM runtime.
+The `.joblib` classifier cannot replace the `.pt` checkpoint directly.
+
+Next steps are to add the matching backend feature/classifier wrapper, validate
+live clip sampling and alert thresholds, and update the UI's model readiness,
+score, and review state. See [the project next steps](../README.md#next-steps)
+and [experiment record](../ML_TRAINING_EXPERIMENT.md).
+
 To enable possible-violence scoring, install the selected PyTorch checkpoint at:
 
 ```text

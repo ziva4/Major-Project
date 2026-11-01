@@ -1,5 +1,31 @@
 # Google Colab quick start
 
+## Latest experiment status (1 November 2026)
+
+The original baseline workflow below is historical context. Later experiments
+used a Tesla T4, PyTorch 2.11.0+cu130, torchvision 0.26.0+cu130, and OpenCV
+4.14.0. The shared project folder was added as a shortcut in My Drive, then
+mounted at `/content/google_drive/MyDrive/ViolenceDetection`.
+
+Videos and backend were copied to `/content/ViolenceDetectionImproved/`.
+All 1,600 training/validation videos passed decode checks. A sorted, seeded
+1,440/160 split was saved as `experiments/improved_v1/split_manifest.json` and
+reused for later comparisons. Official `val` remained the 400-clip test set.
+Use `num_workers=0` for the recorded workflow; local Colab copies disappear
+when the runtime resets, while Drive artifacts persist.
+
+The selected offline method is cached MobileNetV3 temporal mean/std features +
+logistic regression: 75.74% validation F1, 76.00% test accuracy, and 74.74%
+test F1. A separate PCA/KNN comparison reached 74.56% validation F1.
+See [the full experiment record](../ML_TRAINING_EXPERIMENT.md) for paths,
+all model configurations, and pending notebook export/final bundle checks.
+Only the KNN runnable script's Drive save was confirmed; most later code was
+run as notebook cells and is not yet checked into this repository.
+
+Dashboard integration of the `.joblib` classifier is deferred. The local app
+still expects CNN/LSTM `.pt` checkpoints. The original baseline setup below
+does not automatically reproduce the newer experiments or their saved split.
+
 Use Colab with a **T4 GPU** for RWF-2000 training. The dataset and checkpoints
 are stored in Google Drive, so they survive Colab runtime resets.
 

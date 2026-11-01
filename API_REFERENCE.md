@@ -1,3 +1,12 @@
+> **Status update (1 November 2026):** This guide contains historical demo/setup
+> material, including claims that do not describe the current implementation.
+> The runtime uses YOLO11n/ByteTrack with an optional PyTorch CNN/LSTM model.
+> The selected offline experiment is MobileNetV3 feature pooling + logistic
+> regression (76.00% test accuracy, 74.74% test F1); dashboard integration is
+> pending. KNN reached 74.56% validation F1 and has no test result.
+> Use [README.md](README.md) for current setup/next steps and
+> [ML_TRAINING_EXPERIMENT.md](ML_TRAINING_EXPERIMENT.md) for the experiment record.
+
 # API Reference & Demo Scenarios
 
 ## REST API Endpoints

@@ -20,7 +20,42 @@ The app works for person detection without the action-model checkpoint. Violence
 alerts are enabled only after `backend/models/violence_action_model.pt` is
 present and loads successfully.
 
-## Important limitations
+## Latest experiment status (1 November 2026)
+
+The selected offline classifier is now **frozen MobileNetV3-small features +
+temporal mean/std pooling + StandardScaler + logistic regression** (`C=0.01`).
+It achieved **76.00% test accuracy, 78.89% precision, 71.00% recall, and 74.74%
+F1** on 400 RWF-2000 test clips. Its validation F1 was 75.74%.
+
+Three follow-up CNN/LSTM configurations and a PCA/KNN comparison were also
+run in Colab. KNN reached 74.56% validation F1, below logistic regression.
+See [the experiment record](ML_TRAINING_EXPERIMENT.md) for all results,
+per-epoch histories, split changes, and limitations.
+
+**The local dashboard still loads CNN/LSTM checkpoints.** The new logistic
+classifier and KNN pipeline are saved in Google Drive and have not been
+integrated into this repository's runtime. A `.joblib` classifier cannot be
+renamed to `violence_action_model.pt` to deploy it.
+
+Confirmed experiment artifacts are under `My Drive/ViolenceDetection/experiments/`
+and `My Drive/ViolenceDetection/KNN_Experiment/`. A separate `final_output/`
+packaging cell was supplied, but its execution has not been confirmed.
+
+### Next steps
+
+1. Verify the final output bundle and save/export the current Colab notebook
+   and experiment code; bring reproducible code into the repository.
+2. Download the selected classifier, matching feature-extractor weights and
+   preprocessing metadata, then add a logistic-regression runtime wrapper.
+3. Integrate it with the Flask dashboard and optional React frontend, including
+   explicit model readiness, score display, and human-review alerts.
+4. Validate rolling-webcam sampling against the training clip preprocessing;
+   select alert thresholds on separate validation footage. The offline 0.5
+   classification threshold does not establish a live alert threshold.
+5. Evaluate on separately collected, authorised footage. Further tuning after
+   viewing the existing test results needs a new independent final evaluation.
+
+## Prototype limitations
 
 - A high model score is not evidence that violence occurred. Always require
   timely human review before taking action.
