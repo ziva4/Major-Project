@@ -12,7 +12,29 @@ import sys
 from pathlib import Path
 from urllib.request import urlopen, urlretrieve
 
+from tqdm.auto import tqdm
+
 ZENODO_RECORD = "https://zenodo.org/api/records/15687512"
+
+
+def download_with_progress(url, target, expected_size):
+    """Download one archive part while displaying bytes, speed, and ETA."""
+    with tqdm(
+        total=expected_size,
+        unit="B",
+        unit_scale=True,
+        unit_divisor=1024,
+        desc=target.name,
+    ) as progress:
+        previous_bytes = 0
+
+        def report_hook(block_number, block_size, total_size):
+            nonlocal previous_bytes
+            downloaded_bytes = block_number * block_size
+            progress.update(max(0, downloaded_bytes - previous_bytes))
+            previous_bytes = downloaded_bytes
+
+        urlretrieve(url, target, reporthook=report_hook)
 
 
 def main():
@@ -25,7 +47,12 @@ def main():
 
     with urlopen(ZENODO_RECORD) as response:
         files = json.load(response)["files"]
-    parts = sorted(file for file in files if file["key"].startswith("RWF-2000.7z."))
+    # Zenodo returns file metadata as dictionaries. Sort by filename, not the
+    # dictionaries themselves (which Python cannot order).
+    parts = sorted(
+        (file for file in files if file["key"].startswith("RWF-2000.7z.")),
+        key=lambda file: file["key"],
+    )
     if not parts:
         raise RuntimeError("Could not find RWF-2000 archive parts in the Zenodo record.")
     for file in parts:
@@ -34,7 +61,7 @@ def main():
             print(f"Already downloaded: {target.name}")
             continue
         print(f"Downloading {target.name} ({file['size'] / 1024**2:.0f} MB)")
-        urlretrieve(file["links"]["self"], target)
+        download_with_progress(file["links"]["self"], target, file["size"])
 
     seven_zip = shutil.which("7z")
     if not seven_zip:

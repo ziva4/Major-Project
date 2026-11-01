@@ -4,6 +4,22 @@ The app's YOLO model detects and tracks people. The optional CNN/LSTM model
 scores a **short video clip** as `normal` or `possible violence`; it does not
 identify people and should always be used with human review.
 
+## Current RWF-2000 baseline
+
+The completed RWF-2000 baseline is documented in
+[ML_TRAINING_EXPERIMENT.md](../ML_TRAINING_EXPERIMENT.md). It used a 16-frame,
+pretrained MobileNetV3-small + LSTM model with hidden size 64, a frozen CNN
+backbone, AdamW, dropout, and early stopping. Epoch 2 was selected by the best
+validation F1 (66.3%); it achieved 70.5% held-out test accuracy and 71.8% test
+F1. The model was allowed up to 10 epochs and stopped at epoch 5 because
+validation F1 did not improve for three consecutive epochs.
+
+The selected Google Drive checkpoint must be copied locally as:
+
+```text
+backend/models/violence_action_model.pt
+```
+
 ## 1. Prepare the videos
 
 Create this structure. Use video clips, not individual images.
@@ -29,15 +45,58 @@ notebook with GPU enabled, and run from the uploaded `backend` directory:
 
 ```python
 !pip install torch torchvision opencv-python
-!python train_violence_model.py --data data --epochs 15 --batch-size 4
+!python train_violence_model.py --data data --epochs 15 --batch-size 4 --patience 5
 ```
 
 The resulting file is `models/violence_action_model.pt`. Copy that one file to
 the same `backend/models/` folder on this computer and restart `run.bat`.
 
+After every epoch, the script prints training and validation loss, accuracy,
+precision, recall, and F1. It saves a checkpoint only when validation F1
+improves and stops after five epochs without an improvement by default. Use
+`--patience 0` to disable early stopping.
+
+For a very small experimental dataset, start with the pretrained CNN backbone
+frozen and a smaller LSTM rather than removing arbitrary layers:
+
+```python
+!python train_violence_model.py --data <dataset-root> --hidden-size 64 --freeze-backbone --patience 5
+```
+
+This can reduce overfitting, but it cannot compensate for too few or
+unrepresentative clips. Fine-tune the full model only after obtaining a larger,
+balanced dataset and a reliable held-out split.
+
+For this safety-oriented binary classification task, choose the checkpoint by
+validation F1 (and inspect precision and recall), not validation accuracy alone.
+Keep the final test set untouched until model selection is complete.
+
+## 4. Held-out test results
+
+To print final test loss, accuracy, precision, recall, and F1, reserve a
+separate set of clips that was not used during training or early stopping:
+
+```text
+test/
+  NonFight/
+  Fight/
+```
+
+Then supply that folder only when the training run is complete:
+
+```python
+!python train_violence_model.py --data <train-and-validation-root> --test-data <test-folder>
+```
+
+The script reloads the checkpoint with the best validation F1 and evaluates it
+once on the held-out test clips. Do not use that result to tune layers,
+thresholds, epochs, or other settings; doing so turns the test set into another
+validation set.
+
 ## 3. Runtime behaviour
 
-The live app keeps a rolling 32-frame clip and runs the CNN/LSTM every 16
-frames. It averages the last five scores and creates a `POSSIBLE_VIOLENCE`
-alert only when the average reaches the checkpoint threshold (default: 80%).
-Tune this only after testing with separate, unseen videos.
+The live app keeps a rolling clip whose length is read from the checkpoint
+(16 frames for the current RWF-2000 baseline) and runs the CNN/LSTM about every
+16 processed frames. It averages the last five scores and creates a
+`POSSIBLE_VIOLENCE` alert only when the average reaches the checkpoint threshold
+(default: 80%). Tune this only after testing with separate, unseen videos.

@@ -1,30 +1,78 @@
-# Colab quick start
+# Google Colab quick start
 
-This trains in Google Colab, so the large dataset and GPU workload do not use
-your laptop. RWF-2000 is an academic surveillance-video dataset of 2,000 clips;
-the source archive is about 9.4 GB. Review its terms and ensure Google Drive has
-at least 20 GB free before starting. [Zenodo dataset record](https://zenodo.org/records/15687512)
+Use Colab with a **T4 GPU** for RWF-2000 training. The dataset and checkpoints
+are stored in Google Drive, so they survive Colab runtime resets.
 
-1. Upload the `backend` folder to `MyDrive/MajorProject/backend`.
-2. In Colab, create a notebook, enable **T4 GPU**, and run these cells:
+## Permanent Google Drive layout
+
+```text
+My Drive/ViolenceDetection/
+  RWF-2000/safe_dataset/
+    train/Fight/       train/NonFight/
+    val/Fight/         val/NonFight/
+  project_backup/backend/
+  checkpoints/
+```
+
+The safe dataset uses short filenames because the original archive contains a
+small number of paths that exceed Colab's filename-length limit.
+
+## Start a new runtime
+
+1. Select **Runtime -> Change runtime type -> T4 GPU**.
+2. Mount Drive and restore the backend:
 
 ```python
 from google.colab import drive
-drive.mount('/content/drive')
-%cd /content/drive/MyDrive/MajorProject/backend
-!pip install torch torchvision opencv-python
-!apt-get update -qq && apt-get install -y -qq p7zip-full
-!python download_rwf2000.py --output data/RWF-2000
+drive.mount('/content/google_drive')
+
+from pathlib import Path
+import shutil
+
+DRIVE_ROOT = Path('/content/google_drive/MyDrive/ViolenceDetection')
+DATASET = DRIVE_ROOT / 'RWF-2000/safe_dataset'
+BACKEND_BACKUP = DRIVE_ROOT / 'project_backup/backend'
+LOCAL_BACKEND = Path('/content/MajorProject/backend')
+
+assert DATASET.exists(), f'Missing dataset: {DATASET}'
+assert BACKEND_BACKUP.exists(), f'Missing backend backup: {BACKEND_BACKUP}'
+
+LOCAL_BACKEND.parent.mkdir(parents=True, exist_ok=True)
+if LOCAL_BACKEND.exists():
+    shutil.rmtree(LOCAL_BACKEND)
+shutil.copytree(BACKEND_BACKUP, LOCAL_BACKEND)
+
+%pip install -q torch torchvision opencv-python tqdm
+%cd /content/MajorProject/backend
 ```
 
-3. The download script prints the exact folder which contains `train/Fight`,
-`train/NonFight`, `val/Fight`, and `val/NonFight`. Use that printed path:
+3. Check the expected 2,000-video dataset:
 
 ```python
-!python train_violence_model.py --data <printed-dataset-path> --epochs 15 --batch-size 4
+for relative in ('train/Fight', 'train/NonFight', 'val/Fight', 'val/NonFight'):
+    print(relative, len(list((DATASET / relative).glob('*.avi'))))
 ```
 
-`train_violence_model.py` preserves the official RWF-2000 training/validation
-split when that layout is present. It saves `models/violence_action_model.pt`.
-Download only that checkpoint and put it into the local `backend/models/` folder,
-then restart the local dashboard with `./run.bat`.
+Expected counts are 800, 800, 200, and 200.
+
+## Baseline configuration used in this project
+
+```text
+Framework: PyTorch
+Architecture: pretrained MobileNetV3-small + 1-layer LSTM
+Sequence length: 16 frames
+Image size: 160 x 160
+LSTM hidden size: 64
+Batch size: 4
+Optimiser: AdamW (learning rate 1e-4, weight decay 1e-4)
+Regularisation: frozen CNN backbone + dropout + early stopping
+```
+
+The reported run split the official RWF-2000 training folders into 1,440
+training clips and 160 validation clips. The official `val` folders were kept
+as the 400-clip held-out test set. Save the best validation-F1 checkpoint to
+Drive, then download it to `backend/models/violence_action_model.pt` on the
+local computer.
+
+See [ML_TRAINING_EXPERIMENT.md](../ML_TRAINING_EXPERIMENT.md) for the actual
+metrics, checkpoint selection, and experiment limitations.
