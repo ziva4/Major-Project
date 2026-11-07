@@ -1,5 +1,10 @@
 # Google Colab quick start
 
+> **Notebook export verified ? 7 November 2026:** The user-downloaded latest
+> Colab notebook is preserved with saved outputs in [notebooks](../notebooks/README.md).
+> Its logistic/KNN results match this record. Earlier statements that notebook
+> export is unconfirmed are superseded by this update. No training was rerun.
+
 ## Latest experiment status (1 November 2026)
 
 The original baseline workflow below is historical context. Later experiments

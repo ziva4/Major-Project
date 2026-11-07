@@ -1,5 +1,10 @@
 # Violence Detection and Person-Tracking Dashboard
 
+> **Notebook export verified ? 7 November 2026:** The user-downloaded latest
+> Colab notebook is preserved with saved outputs in [notebooks](notebooks/README.md).
+> Its logistic/KNN results match this record. Earlier statements that notebook
+> export is unconfirmed are superseded by this update. No training was rerun.
+
 Last updated: **7 November 2026**.
 
 A local research/demo application with a working built-in Flask dashboard.

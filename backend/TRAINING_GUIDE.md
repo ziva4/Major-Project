@@ -1,5 +1,10 @@
 # Training the violence-action model
 
+> **Notebook export verified ? 7 November 2026:** The user-downloaded latest
+> Colab notebook is preserved with saved outputs in [notebooks](../notebooks/README.md).
+> Its logistic/KNN results match this record. Earlier statements that notebook
+> export is unconfirmed are superseded by this update. No training was rerun.
+
 ## Latest experiment status (1 November 2026)
 
 This guide's commands train the existing CNN/LSTM implementation. They do not

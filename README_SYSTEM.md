@@ -1,5 +1,10 @@
 # Current system and future-session handoff
 
+> **Notebook export verified ? 7 November 2026:** The user-downloaded latest
+> Colab notebook is preserved with saved outputs in [notebooks](notebooks/README.md).
+> Its logistic/KNN results match this record. Earlier statements that notebook
+> export is unconfirmed are superseded by this update. No training was rerun.
+
 Last updated: **7 November 2026**. This is the current architecture/handoff
 reference. Read [README.md](README.md) first for launch and user workflow.
 Training chronology belongs in [ML_TRAINING_EXPERIMENT.md](ML_TRAINING_EXPERIMENT.md).

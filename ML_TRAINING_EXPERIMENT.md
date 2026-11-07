@@ -1,5 +1,10 @@
 # Model Training Experiment Record
 
+> **Notebook export verified ? 7 November 2026:** The user-downloaded latest
+> Colab notebook is preserved with saved outputs in [notebooks](notebooks/README.md).
+> Its logistic/KNN results match this record. Earlier statements that notebook
+> export is unconfirmed are superseded by this update. No training was rerun.
+
 This document records the RWF-2000 training work completed for the violence
 action classifier. It is a reproducibility record for the final-year project,
 not a claim that the system is ready for production use.
