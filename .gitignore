@@ -6,3 +6,9 @@ backend/models/*.pt
 backend/yolo11n.pt
 backend/models/*.pkl
 backend/models/*.h5
+# Downloaded deployment binaries and local inference artifacts
+backend/models/**/*.pt
+backend/models/**/*.joblib
+backend/models/**/*.npz
+backend/inference_results/
+backend/.venv-inference/

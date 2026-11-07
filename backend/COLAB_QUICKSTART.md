@@ -18,7 +18,8 @@ The selected offline method is cached MobileNetV3 temporal mean/std features +
 logistic regression: 75.74% validation F1, 76.00% test accuracy, and 74.74%
 test F1. A separate PCA/KNN comparison reached 74.56% validation F1.
 See [the full experiment record](../ML_TRAINING_EXPERIMENT.md) for paths,
-all model configurations, and pending notebook export/final bundle checks.
+all model configurations and the pending full-notebook export. The final bundle
+was exported and verified locally on 7 November; dashboard integration is complete.
 Only the KNN runnable script's Drive save was confirmed; most later code was
 run as notebook cells and is not yet checked into this repository.
 

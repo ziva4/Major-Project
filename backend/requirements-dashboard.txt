@@ -1,0 +1,8 @@
+# Install into the inference environment with its existing CPU torch/torchvision.
+-r requirements-inference.txt
+Flask>=3.1,<4
+Flask-SocketIO>=5.3,<6
+Flask-Cors>=4,<7
+simple-websocket>=1,<2
+ultralytics>=8.3,<9
+lap>=0.5.12,<0.6

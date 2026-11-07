@@ -1,180 +1,186 @@
 # Violence Detection and Person-Tracking Dashboard
 
-A local, webcam-based surveillance prototype that detects and tracks people in
-real time and can optionally flag **possible violence** from a short sequence
-of video frames. It is designed for demonstration, research, and supervised
-review - not autonomous safety or law-enforcement decisions.
+Last updated: **7 November 2026**.
 
-## What it does
+A local research/demo application with a working built-in Flask dashboard.
+Choose **Live camera** or **Upload video**, view person tracking and a Fight
+score, and adjust the demo-alert slider to create reviewable alerts.
+The selected classifier is **MobileNetV3-small + temporal mean/std pooling +
+StandardScaler + logistic regression**, not the earlier LSTM.
 
-- Captures a webcam feed with OpenCV.
-- Uses the pretrained **YOLO11n** COCO model to detect people and assign
-  persistent ByteTrack IDs.
-- Streams an annotated MJPEG video feed and live detection data through a
-  Flask/Socket.IO dashboard.
-- Keeps an alert history that an operator can acknowledge.
-- Optionally loads a locally trained **MobileNetV3 + LSTM** checkpoint to score
-  a rolling video clip as normal activity or *possible violence*.
+## Start here in a future session
 
-The app works for person detection without the action-model checkpoint. Violence
-alerts are enabled only after `backend/models/violence_action_model.pt` is
-present and loads successfully.
+Read this file for current behaviour, [README_SYSTEM.md](README_SYSTEM.md)
+for architecture and handoff details, [backend/LOCAL_INFERENCE.md](backend/LOCAL_INFERENCE.md)
+for environment/verification, and [ML_TRAINING_EXPERIMENT.md](ML_TRAINING_EXPERIMENT.md)
+for the full training and integration history. Earlier delivery documents are
+marked historical and must not override the current runtime instructions.
 
-## Latest experiment status (1 November 2026)
+No new model training is required to continue integration work. The user has
+reported the dashboard working after the capture fix and subsequent changes;
+systematic accuracy/latency validation on independent local footage is still pending.
 
-The selected offline classifier is now **frozen MobileNetV3-small features +
-temporal mean/std pooling + StandardScaler + logistic regression** (`C=0.01`).
-It achieved **76.00% test accuracy, 78.89% precision, 71.00% recall, and 74.74%
-F1** on 400 RWF-2000 test clips. Its validation F1 was 75.74%.
+## Launch on this laptop
 
-Three follow-up CNN/LSTM configurations and a PCA/KNN comparison were also
-run in Colab. KNN reached 74.56% validation F1, below logistic regression.
-See [the experiment record](ML_TRAINING_EXPERIMENT.md) for all results,
-per-epoch histories, split changes, and limitations.
-
-**The local dashboard still loads CNN/LSTM checkpoints.** The new logistic
-classifier and KNN pipeline are saved in Google Drive and have not been
-integrated into this repository's runtime. A `.joblib` classifier cannot be
-renamed to `violence_action_model.pt` to deploy it.
-
-Confirmed experiment artifacts are under `My Drive/ViolenceDetection/experiments/`
-and `My Drive/ViolenceDetection/KNN_Experiment/`. A separate `final_output/`
-packaging cell was supplied, but its execution has not been confirmed.
-
-### Next steps
-
-1. Verify the final output bundle and save/export the current Colab notebook
-   and experiment code; bring reproducible code into the repository.
-2. Download the selected classifier, matching feature-extractor weights and
-   preprocessing metadata, then add a logistic-regression runtime wrapper.
-3. Integrate it with the Flask dashboard and optional React frontend, including
-   explicit model readiness, score display, and human-review alerts.
-4. Validate rolling-webcam sampling against the training clip preprocessing;
-   select alert thresholds on separate validation footage. The offline 0.5
-   classification threshold does not establish a live alert threshold.
-5. Evaluate on separately collected, authorised footage. Further tuning after
-   viewing the existing test results needs a new independent final evaluation.
-
-## Prototype limitations
-
-- A high model score is not evidence that violence occurred. Always require
-  timely human review before taking action.
-- Model quality depends on the training data and may perform poorly across
-  different cameras, lighting, crowds, activities, and demographics.
-- Obtain authorization for any video processing and follow applicable privacy,
-  security, retention, and notice requirements.
-- This project has no authentication, access controls, encrypted storage, or
-  production deployment hardening. Do not expose it directly to the internet.
-
-## Quick start
-
-### Requirements
-
-- Python 3.10+ recommended
-- A working integrated or USB webcam
-- Internet access on the first start so Ultralytics can download `yolo11n.pt`
-- Windows: PowerShell or Command Prompt (the included `run.bat` is Windows-only)
-
-From the repository root:
+Paste into PowerShell from any directory:
 
 ```powershell
-cd backend
-python -m venv venv
-.\venv\Scripts\Activate.ps1
-pip install -r requirements.txt
-pip install torch torchvision
-python app.py
+& "C:\Users\Shiva\OneDrive\문서\Major Project\Major-Project\backend\.venv-inference\Scripts\python.exe" -X utf8 "C:\Users\Shiva\OneDrive\문서\Major Project\Major-Project\backend\app.py"
 ```
 
-`torch` and `torchvision` are required by the action-model runtime, even when
-no trained action checkpoint has been added. If you use the Windows launcher,
-run `backend\run.bat` after creating the environment; it installs the packages
-listed in `requirements.txt` and starts the server.
+Open **http://127.0.0.1:5000**. Leave PowerShell running.
+Press Ctrl+C to stop. Restart after code changes; debug reload is disabled.
 
-Open <http://localhost:5000>. Grant your browser/system camera permission when
-prompted. The first start downloads the small pretrained YOLO model; subsequent
-starts reuse the cached model.
+From the repository root, the shorter equivalent is:
 
-To stop the server, press `Ctrl+C` in its terminal.
+```powershell
+backend/.venv-inference/Scripts/python.exe -X utf8 backend/app.py
+```
 
-## Optional violence-action model
+`backend/run.bat` is the Windows launcher. Use port **5000** for the current
+built-in dashboard; port 3000 is the older optional React frontend.
 
-The default dashboard provides people detection and tracking. To enable
-possible-violence alerts, train a checkpoint and place it here:
+## How to use the dashboard
+
+1. Choose **Start live detection**, or select a file and **Upload and detect**.
+   Server startup loads models but does not open the camera.
+2. View person boxes/ByteTrack IDs, person confidence, model state, and Fight score.
+3. Move the **Settings slider** to the desired **demo alert threshold**.
+   Moving it enables demo alerts and immediately checks a valid existing score.
+4. Review entries in **Recent Demo Alerts** and acknowledge them as needed.
+5. For uploads, pause/resume processing or stop; choose a new source when ready.
+
+| Mode | Fight score | Video behaviour |
+| --- | --- | --- |
+| Live camera | 16 frames from a rolling five-second window | Capture, person tracking, and action classification run in separate workers |
+| Upload | One score from 16 uniform samples over the entire file | Person tracking processes frames in order, with progress; playback may be slower than real time |
+
+Uploads accept MP4, AVI, MOV, MKV, and WebM with a **256 MB request limit**.
+They must be readable with at least 16 frames and valid FPS. Accepted uploads
+remain locally in ignored `backend/data/uploads/` with generated filenames.
+The video is sent to the local server, not to Drive or an external model.
+Upload scores stay visible after playback; they do not localise an event in time.
+Source changes reset tracking/clip state and alert history.
+
+### Three different percentages
+
+| Setting | Current default | Meaning |
+| --- | --- | --- |
+| Fight classification | 50% | Fight vs NonFight class decision |
+| Demo alert slider | 70% | Scores at or above this create review alerts when enabled |
+| YOLO person confidence | 50% | Filters person detections; no longer controlled by this slider |
+
+Example: a **73.9% Fight score** qualifies for a **70% demo alert**.
+Moving the slider rechecks completed-upload scores too. Alerts are generated on
+entry into the qualifying state, not repeatedly on every update. Raising the
+threshold does not erase history. Alerts/acknowledgements are in memory; they
+reset on a source switch or server restart. The chosen threshold survives source
+switches but resets to the startup default on restart.
+
+Without a slider change, alerts initially remain disabled unless started with
+`--demo-alerts`. Other startup options: `--alert-threshold 0.7`, `--camera 1`.
+No police dispatch, email, SMS, or other external notification is implemented.
+
+## Selected model and results
 
 ```text
-backend/models/violence_action_model.pt
+16 frames -> OpenCV RGB resize to 160 x 160 -> ImageNet normalisation
+-> frozen ImageNet MobileNetV3-small -> 576 features per frame
+-> temporal mean + population std -> 1,152 features
+-> saved StandardScaler + logistic regression (C=0.01) -> Fight score
 ```
 
-For GPU training in Google Colab using RWF-2000, follow
-[the Colab quick-start guide](backend/COLAB_QUICKSTART.md). For custom videos,
-see [the training guide](backend/TRAINING_GUIDE.md).
+| Evaluation | Accuracy | Precision | Recall | F1 |
+| --- | ---: | ---: | ---: | ---: |
+| Validation, 160 clips | 74.38% | 71.91% | 80.00% | 75.74% |
+| Test, 400 clips | 76.00% | 78.89% | 71.00% | 74.74% |
 
-At runtime, the recognizer uses the rolling clip length saved in the checkpoint
-(16 frames for the current RWF-2000 baseline), scores it about every
-16 processed frames, averages the last five scores, and creates an alert only
-when the checkpoint's threshold is reached (80% by default).
+The test confusion matrix was TN=162, FP=38, FN=58, TP=142.
+KNN remains an offline comparison (74.56% validation F1; no test evaluation).
+Original and follow-up CNN/LSTM configurations are documented in the experiment
+record. Do not describe the current classifier as an LSTM or KNN runtime.
 
-## API
+## Artifacts and dependencies
 
-| Endpoint | Purpose |
+The eight-file bundle is installed in `backend/models/mobilenet_logistic/`.
+Runtime needs the trusted `best_logistic_classifier.joblib`,
+`mobilenet_feature_extractor.pt`, `feature_metadata.json`, and
+`package_versions.json`. The joblib already includes StandardScaler.
+CNN weights load locally without downloading ImageNet weights.
+
+The separate `backend/.venv-inference/` environment uses scikit-learn **1.6.1**,
+matching the export. The laptop uses CPU PyTorch 2.9.1 / torchvision 0.24.1.
+Colab used CUDA PyTorch 2.11.0 / torchvision 0.26.0; two real clips matched local
+scores within 1e-6. The system scikit-learn 1.8.0 was not replaced.
+
+Install/update dashboard dependencies in the existing environment with:
+
+```powershell
+backend/.venv-inference/Scripts/python.exe -X utf8 -m pip install -r backend/requirements-dashboard.txt
+```
+
+This includes ByteTrack's `lap` dependency. First YOLO launch may download
+`backend/yolo11n.pt`. Plain `python` points to a broken Windows alias on this
+laptop, so use the explicit environment executable. Older `requirements.txt`
+and `run.sh` predate this setup; see the current setup guide before using them.
+
+## Source map
+
+| File | Responsibility |
 | --- | --- |
-| `GET /` | Dashboard page |
-| `GET /video_feed` | Annotated MJPEG camera stream |
-| `GET /api/detection` | Current person, tracking, model, and alert state |
-| `GET /api/alerts?limit=10` | Recent alerts |
-| `POST /api/threshold` | Set the person-detection confidence threshold |
-| `POST /api/alerts/<id>/acknowledge` | Mark an alert as reviewed |
+| `backend/app.py` | Flask/Socket.IO, source uploads/controls, threshold endpoints, local startup |
+| `backend/video_processor.py` | Separate live workers, upload processing, state, tracking, review alerts |
+| `backend/logistic_model.py` | Bundle validation, exact preprocessing/pooling, classifier inference |
+| `backend/predict_video.py` | Standalone video-to-JSON command |
+| `backend/templates/index.html` | Current source chooser, feed, scores, slider, alert list |
+| `backend/test_logistic_model.py` | Three bundle-backed inference tests |
+| `backend/test_live_integration.py` | 24 source/state/API/alert integration tests |
+| `backend/action_model.py` | Earlier CNN/LSTM definition; retained for training/history |
+| `frontend/` | Optional older React source; current feature parity pending |
 
-`POST /api/threshold` accepts JSON such as `{ "threshold": 0.5 }`. This
-threshold controls YOLO person detections; it does not change the trained
-violence-action threshold.
+## Verification and known issues
 
-The server emits `detection_update` events through Socket.IO roughly every
-0.5 seconds. See [API_REFERENCE.md](API_REFERENCE.md) for the original endpoint
-reference; some examples there predate the current YOLO/action-model runtime.
+Three bundle-backed inference tests and 24 integration tests passed at their
+recorded checkpoints; embedded JavaScript syntax and Git whitespace checks passed.
+Two-clip Colab comparison, real-model upload smoke test, and four additional
+validation-clip checks are recorded in [LOCAL_INFERENCE.md](backend/LOCAL_INFERENCE.md).
 
-## Project layout
+One earlier **NonFight** clip scored about 74.01%, a false positive reproduced
+in Colab. Four additional selected clips classified correctly; this is not an
+independent accuracy estimate. Do not adjust thresholds merely to make these
+selected clips pass.
 
-```text
-backend/
-  app.py                    Flask, REST endpoints, and Socket.IO server
-  video_processor.py        Webcam capture, YOLO tracking, alert lifecycle
-  action_model.py           MobileNetV3 + LSTM checkpoint runtime
-  train_violence_model.py   Checkpoint training script
-  TRAINING_GUIDE.md         Custom-data training instructions
-  COLAB_QUICKSTART.md       RWF-2000/Colab workflow
-  requirements.txt          Python dependencies
-  templates/index.html      Built-in dashboard
-frontend/                   Separate React dashboard source (optional)
-API_REFERENCE.md            API and demo reference
-```
+If Fight score is unavailable, inspect readiness/wait/error messages. Live mode
+needs a complete five-second window; stale scores are hidden. Capture was
+separated from YOLO after a 2 FPS detector caused indefinite warmup.
+See the troubleshooting guide rather than assuming a model-loading failure.
 
-## Development notes
+## Next steps
 
-- The built-in Flask dashboard is served at port `5000`.
-- The React source under `frontend/` is a separate development frontend. Run
-  `npm install` followed by `npm start` from that directory after the backend is
-  running.
-- Runtime artefacts such as virtual environments, datasets, and trained model
-  weights are intentionally excluded from Git; see `.gitignore`.
+1. Save/export the current Colab notebook and preserve runnable training/feature
+   extraction code; full notebook export is not confirmed.
+2. Collect authorised, independent labelled footage; evaluate false alarms,
+   missed fights, latency, and live sampling/alert behaviour. A demo threshold
+   is not an operationally validated threshold.
+3. Improve slow uploaded-video playback if needed; retain clear score scope.
+4. Update optional React source controls, model state, score, and alert slider
+   if that frontend is needed. The Flask dashboard is the current demo.
+5. Prepare report/demo evidence and a reproducible artifact/version manifest.
+6. Keep future changes committed and backed up to the existing GitHub repository.
+   The 7 November integration update includes code, tests, documentation, and
+   small bundle metadata; model binaries and videos remain outside Git.
 
-## Troubleshooting
+This prototype has no authentication, durable alert store, or production
+hardening. It binds to localhost. Every score/alert requires human review.
 
-- **Camera cannot open:** Close other programs using the camera and check OS
-  camera privacy settings. If needed, change `camera_index=0` in
-  `VideoProcessor` to another device index.
-- **`No module named torch` or `torchvision`:** Activate the backend virtual
-  environment and run `pip install torch torchvision`.
-- **No possible-violence score:** This is expected until a compatible
-  `backend/models/violence_action_model.pt` checkpoint is installed.
-- **Port 5000 is already in use:** Stop the conflicting process or change the
-  port in `backend/app.py`.
+## Further documentation
 
-## Documentation
-
-- [API reference](API_REFERENCE.md)
-- [Training guide](backend/TRAINING_GUIDE.md)
-- [Google Colab quick start](backend/COLAB_QUICKSTART.md)
-- [RWF-2000 training experiment record](ML_TRAINING_EXPERIMENT.md)
-- [Frontend setup](FRONTEND_SETUP.md)
+- [System handoff](README_SYSTEM.md)
+- [Quick start](QUICKSTART.md)
+- [Local inference and troubleshooting](backend/LOCAL_INFERENCE.md)
+- [Current API](API_REFERENCE.md)
+- [Model details](ML_MODEL_DETAILS.md)
+- [Experiment history](ML_TRAINING_EXPERIMENT.md)
+- [Colab workflow](backend/COLAB_QUICKSTART.md)
+- [Historical CNN/LSTM training guide](backend/TRAINING_GUIDE.md)
+- [Optional React status](frontend/README.md)

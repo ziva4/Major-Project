@@ -1,13 +1,73 @@
-> **Status update (1 November 2026):** This guide contains historical demo/setup
-> material, including claims that do not describe the current implementation.
-> The runtime uses YOLO11n/ByteTrack with an optional PyTorch CNN/LSTM model.
-> The selected offline experiment is MobileNetV3 feature pooling + logistic
-> regression (76.00% test accuracy, 74.74% test F1); dashboard integration is
-> pending. KNN reached 74.56% validation F1 and has no test result.
-> Use [README.md](README.md) for current setup/next steps and
-> [ML_TRAINING_EXPERIMENT.md](ML_TRAINING_EXPERIMENT.md) for the experiment record.
+> **Current status ? 7 November 2026:** The built-in Flask dashboard now uses
+> YOLO11n/ByteTrack and MobileNetV3 temporal pooling + logistic regression.
+> Live camera and uploaded videos are supported. The demo-alert slider defaults
+> to 70%; person detection remains at 50%. Logistic regression achieved 76.00%
+> held-out test accuracy and 74.74% test F1. KNN has validation results only.
+> Read [README.md](README.md) and [README_SYSTEM.md](README_SYSTEM.md) first.
+> The older material below is historical and may describe superseded interfaces,
+> dependencies or model implementations; it is not the current setup procedure.
 
 # API Reference & Demo Scenarios
+
+## Logistic dashboard API update (7 November 2026)
+
+### Source selection and uploads
+
+The app starts idle without opening the camera. The built-in UI chooses the
+source using these local endpoints:
+
+| Endpoint | Request | Purpose |
+| --- | --- | --- |
+| `POST /api/source/live` | No body | Stop the old source and start the configured camera |
+| `POST /api/source/upload` | Multipart `video` file | Validate and analyse an uploaded video |
+| `POST /api/source/playback` | JSON `action`: `pause` or `resume` | Control uploaded-video processing |
+| `POST /api/source/stop` | No body | Stop detection and release the current source |
+
+The upload limit is 256 MB per request. Supported extensions are MP4, AVI, MOV,
+MKV, WebM; decoding, frame count (at least 16), and positive finite FPS are
+validated too. Errors use JSON: 400 missing input, 413 too large, 415 extension,
+422 unreadable content, and 409 busy/incompatible source operation.
+
+Detection data adds `source_kind` (`none`, `camera`, `upload`), `source_state`
+(`idle`, `analysing`, `running`, `paused`, `completed`, `stopped`, `error`),
+`source_name`, `source_revision`, frame counts, source duration/position,
+`source_progress` (0 to 1), and `score_scope` (`whole_video` or `rolling_window`).
+Upload mode computes one whole-file score and retains it through pause/EOF;
+it is not a rolling or timestamp-localised score. Person tracking processes
+each uploaded frame, possibly more slowly than real time. Stop/switch resets
+the result; live mode retains its freshness rules. The optional React frontend
+does not implement the new source chooser yet.
+
+### Model state
+
+`GET /api/detection` now identifies `action_model` as MobileNetV3 + logistic
+regression when loaded. `action_model_ready` means the model loaded, while
+`action_status` distinguishes `idle`, `warming_up`, `ready`, `stale`, `error`, and
+`unavailable`. `violence_confidence` is null until a fresh score exists; clients
+must not display null as 0% or as evidence of normal activity. `action_error`
+and `processing_error` report model and camera/tracker problems respectively.
+
+The response includes `classification_threshold` (0.5),
+`action_window_seconds` (5), `action_score_age_seconds`, `action_updated_at`
+(prediction completion Unix time), `alerts_enabled`, and `alert_policy`.
+`violence_threshold` is a separate unvalidated demo alert threshold, default
+0.7 (70%, updated at the user's request). Moving the built-in Settings slider
+enables demo alerts and changes this threshold via `POST /api/alert-threshold`
+with JSON `{"threshold": 0.7}`. A valid current score is rechecked immediately,
+including completed uploads; stale live scores and cleared sources are excluded.
+Alerts fire on entry into the qualifying state (score >= threshold), not on
+every repeated update. Alert records include the threshold and score scope at
+creation. Adjusting the threshold does not erase history. Without a slider
+change or `--demo-alerts`, alerts initially remain disabled.
+Freshness is measured against the end of the sampled video evidence; scores
+older than three seconds are hidden. There is no moving-average smoothing.
+
+`confidence` remains highest person confidence; `POST /api/threshold` controls
+person detection only, for legacy/API clients. It is no longer the built-in
+slider's endpoint. Malformed/nonfinite thresholds return 400; the new demo
+threshold endpoint also rejects values outside [0, 1]. Acknowledging
+an unknown alert returns 404. Existing demo scenarios below predate this model
+and do not establish expected scores or live performance.
 
 ## REST API Endpoints
 

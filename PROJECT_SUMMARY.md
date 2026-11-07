@@ -1,11 +1,11 @@
-> **Status update (1 November 2026):** This guide contains historical demo/setup
-> material, including claims that do not describe the current implementation.
-> The runtime uses YOLO11n/ByteTrack with an optional PyTorch CNN/LSTM model.
-> The selected offline experiment is MobileNetV3 feature pooling + logistic
-> regression (76.00% test accuracy, 74.74% test F1); dashboard integration is
-> pending. KNN reached 74.56% validation F1 and has no test result.
-> Use [README.md](README.md) for current setup/next steps and
-> [ML_TRAINING_EXPERIMENT.md](ML_TRAINING_EXPERIMENT.md) for the experiment record.
+> **Current status ? 7 November 2026:** The built-in Flask dashboard now uses
+> YOLO11n/ByteTrack and MobileNetV3 temporal pooling + logistic regression.
+> Live camera and uploaded videos are supported. The demo-alert slider defaults
+> to 70%; person detection remains at 50%. Logistic regression achieved 76.00%
+> held-out test accuracy and 74.74% test F1. KNN has validation results only.
+> Read [README.md](README.md) and [README_SYSTEM.md](README_SYSTEM.md) first.
+> The older material below is historical and may describe superseded interfaces,
+> dependencies or model implementations; it is not the current setup procedure.
 
 # 🚨 Violence Detection System - PROJECT SUMMARY
 

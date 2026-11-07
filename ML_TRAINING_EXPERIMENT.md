@@ -7,11 +7,75 @@ not a claim that the system is ready for production use.
 ## Objective
 
 Compare video classifiers that distinguish RWF-2000 `Fight` and `NonFight`
-clips, selecting models using validation F1. The original PyTorch CNN/LSTM
-runtime remains in the local dashboard. The newly selected offline model is
-MobileNetV3 feature pooling + logistic regression; integration is pending.
+clips, selecting models using validation F1. As of 7 November 2026, the selected
+MobileNetV3 feature-pooling + logistic-regression pipeline is integrated into
+the local Flask dashboard. The LSTM experiments below are historical.
 
-## Latest outcome (1 November 2026)
+## Current handoff ? 7 November 2026
+
+Read [README.md](README.md), [README_SYSTEM.md](README_SYSTEM.md), and
+[backend/LOCAL_INFERENCE.md](backend/LOCAL_INFERENCE.md) before continuing.
+Later dated entries supersede earlier pending-work notes in this chronological record.
+
+- Final output bundle exported from Drive and installed in
+  `backend/models/mobilenet_logistic/`; the classifier, fitted scaler, CNN weights,
+  metadata and package versions are present. Full later-Colab notebook export
+  remains unconfirmed. Large model files and videos are ignored by Git.
+- Local inference uses CPU PyTorch 2.9.1 / torchvision 0.24.1 with scikit-learn
+  **1.6.1** in `backend/.venv-inference`. The saved Colab feature scores and local
+  video scores agreed within **1e-6** for the initial two validation clips.
+- Built-in Flask UI supports choosing live camera or uploading a video, person
+  tracking, Fight scores, upload pause/resume/stop, and recent demo alerts.
+  Live scoring uses 16 frames over five seconds; uploads use one whole-video score.
+- The Settings slider now controls the **demo-alert threshold**, default **70%**.
+  Moving it enables demo alerts and checks the valid current score immediately.
+  Person detection stays at **50%**; offline classification remains **0.5**.
+  Alerts require score >= threshold and are deduplicated while above threshold.
+  They stay in local process memory and send no external notification.
+- Fixed indefinite live warmup by separating capture from slow YOLO inference;
+  stale live scores are hidden. User confirmed dashboard functionality afterward.
+- Three model-wrapper tests and the expanded 24-test integration suite passed;
+  JavaScript syntax and a real-model HTTP upload smoke check also passed.
+  These are functional checks, not a new accuracy estimate.
+- On 7 November the user authorised committing/pushing the integration, tests,
+  documentation and small bundle metadata to the existing `origin/main`.
+  Large model binaries, videos and environments remain ignored. Check Git
+  history/status for the exact commit; earlier documentation commit: `f0f8750`.
+
+### Additional four validation-clip checks
+
+Downloaded from the saved validation manifest, excluding the first two clips.
+Files are under `backend/data/local_checks/more_validation/`; JSON reports are
+under `backend/inference_results/more_validation/` (both ignored by Git).
+
+| Local file | Manifest-relative source | Fight score | Result at 0.5 |
+| --- | --- | ---: | --- |
+| NonFight_2.avi | train/NonFight/a6a5418f625c0a53e1f1.avi | 27.33% | Correct NonFight |
+| NonFight_3.avi | train/NonFight/d27f1de3b95bffeaff68.avi | 13.30% | Correct NonFight |
+| Fight_2.avi | train/Fight/72beae491fa52d9a82dc.avi | 75.83% | Correct Fight |
+| Fight_3.avi | train/Fight/990b5a2895fbf0825506.avi | 84.45% | Correct Fight |
+
+Both Fight examples qualify for demo alerts at 70%. These selected validation
+examples do not establish independent accuracy. The earlier NonFight example
+`0f76804c04869b44722c.avi` scored **74.01%**, a false positive that also qualifies
+at 70%; the earlier Fight example scored **73.90%**. The Colab/local parity
+check shows the false positive was already in the model, not introduced by migration.
+Paths starting with `train/` here are reserved validation members according to
+the saved manifest; folder names alone do not establish split membership.
+
+### Next work, in order
+
+1. Keep the current bundle/settings fixed and test separate authorised local
+   normal-activity and fight examples; record false alerts and misses.
+2. Choose and document a demo threshold using appropriate development footage,
+   keeping the reported held-out test result separate from tuning.
+3. Export the complete later Colab notebook and preserve reproducible training
+   code, split manifest, environment versions, and model bundle on Drive.
+4. Optionally evaluate the already selected KNN model once for its comparison;
+   it still has no test result. Do not repeatedly tune against that test set.
+5. Update the report/demo and keep subsequent changes backed up in Git.
+
+## Historical outcome (1 November 2026)
 
 Logistic regression on cached MobileNetV3 temporal mean/std features is the
 current selected offline method: **75.74% validation F1; 76.00% test accuracy,
@@ -404,6 +468,134 @@ These Drive artifacts have not been downloaded into this repository.
 6. Keep existing test results fixed. If continuing model/threshold selection
    after inspecting them, use a new independent final evaluation set. Test on
    authorised local footage before drawing conclusions about webcam behaviour.
+
+## Local integration progress (7 November 2026)
+
+The user confirmed `final_output/` exists with all eight files, including
+`mobilenet_feature_extractor.pt` and package versions. Its ZIP was found in
+the laptop's Downloads folder and extracted to
+`backend/models/mobilenet_logistic/`. This resolves the earlier unconfirmed
+bundle-creation status; notebook export remains unconfirmed.
+
+The bundle records scikit-learn 1.6.1, PyTorch 2.11.0+cu130, and torchvision
+0.26.0+cu130. The laptop's inspected Python 3.13 installation has CPU PyTorch
+2.9.1, torchvision 0.24.1, and scikit-learn 1.8.0. A separate project inference
+environment is used to install matching scikit-learn without replacing the
+system installation. A subsequent two-clip comparison is recorded below.
+
+`backend/logistic_model.py` and `backend/predict_video.py` implement standalone
+video inference from the trusted exported artifacts. They load saved CNN
+weights without downloading/retraining, reproduce uniform sampling and
+mean/population-std features, and apply the saved scaler/classifier at 0.5.
+Setup and validation instructions are in `backend/LOCAL_INFERENCE.md`.
+Downloaded model binaries and local output files are excluded from Git.
+
+All three local bundle-backed tests passed: preprocessing/pooling versus the
+notebook formula, uniform frame sampling on a generated video, and explicit
+rejection of invalid inputs. Matching scikit-learn 1.6.1 was installed in
+`backend/.venv-inference/`; system scikit-learn remained at 1.8.0. These are
+implementation checks, not real-video validation or a new accuracy result.
+
+Next: integrate the recognizer with webcam sampling, Flask, and dashboard displays,
+validating the live sampling time window and alert behaviour separately.
+The existing dashboard runtime has not been switched to logistic regression.
+
+Two saved-validation clips were subsequently exported and scored locally:
+`train/NonFight/0f76804c04869b44722c.avi` scored 0.74007621 (false positive at
+0.5), and `train/Fight/8c6bc3fda59678f2292f.avi` scored 0.73904999 (correct
+Fight prediction). Both decoded and completed successfully. Predictions and
+source/hash provenance were saved in the ignored local inference-results
+folder. This two-clip smoke check is not a new performance estimate or a basis
+for threshold tuning.
+
+The user then evaluated the saved classifier against those clips' original
+cached Colab validation features (scikit-learn 1.6.1). The NonFight reference
+score was 0.7400753575 (reported absolute difference 0.0000008530); the Fight
+reference was 0.7390498170 (difference 0.0000001747). Both agree with local
+video inference within 1e-6 for these samples. This supports successful local
+migration for the checked clips and reproduces the NonFight false positive in
+Colab. It does not establish webcam accuracy or general numerical equivalence.
+
+## Webcam integration implementation (7 November 2026)
+
+The built-in Flask dashboard was switched to the selected logistic recognizer.
+It samples 16 distinct frames across a five-second timestamp-based rolling
+window, attempts classification at one-second intervals in a separate worker,
+and hides scores when the video evidence is older than three seconds. It does
+not inherit the old five-score moving average. Camera failure clears buffered
+evidence and invalidates in-flight results. A missing or incompatible model is
+reported while leaving person detection available.
+
+The UI displays person confidence separately from Fight score, action-model
+readiness, warmup/stale/error states, and clip class at 0.5. Demo review alerts
+are disabled by default and can be explicitly enabled with `--demo-alerts`.
+The provisional alert threshold (default 0.8 when enabled) is not calibrated;
+it is separate from the person slider and offline classification threshold.
+The app binds to localhost. The optional React UI is not yet updated.
+
+Dashboard packages were installed into the isolated inference environment;
+`backend/requirements-dashboard.txt` and `backend/LOCAL_INFERENCE.md` record
+setup. Twelve camera-free integration tests and JavaScript syntax checks
+passed. No actual webcam was started for these tests, and no live performance
+claim is made. Next: run with the actual camera, assess sampling/FPS and score
+freshness, then evaluate separate footage before selecting live alert settings.
+
+### First live timing issue and correction
+
+The first live dashboard session loaded the logistic model but stayed in
+warmup. Reading `/api/detection` confirmed no action error, 278 processed
+frames, and person-detection inference around 2 FPS. The initial implementation
+read camera frames in the YOLO loop, so it could not collect 16 distinct frames
+inside its five-second window at that rate. Camera capture was moved to an
+independent worker; tracking consumes the latest frame without blocking clip
+collection or the video feed. Camera FPS and detector FPS are reported
+separately, and warmup exposes a specific wait reason. A regression test checks
+that capture and the action buffer advance while person detection is blocked.
+The running server needs restarting, and live score confirmation is pending.
+
+## Live/upload source selection (7 November 2026)
+
+At the user's request, the built-in dashboard now asks whether to use a live
+camera or upload a video. Server startup no longer opens the camera. Source
+switches stop existing workers and reset clip evidence, person trackers, and
+alert history. Live mode keeps the independent capture/tracking/classification
+workers and rolling five-second score.
+
+Uploaded videos (MP4/AVI/MOV/MKV/WebM, up to a 256 MB request) are validated,
+stored under ignored `backend/data/uploads/` with generated filenames, and
+processed by a background worker. The logistic recognizer scores 16 uniform
+samples over the **entire video**, matching offline inference. It then tracks
+people in each frame in source order, with progress and pause/resume/stop.
+Playback may be slower than real time. The whole-video score remains visible
+after playback, and is explicitly distinguished from a time-localised event
+or live rolling score. No retraining or new accuracy evaluation was performed.
+
+Nineteen camera-free integration tests passed, including validation/size-limit
+errors, idle-without-camera behaviour, serialized source changes, pause/resume,
+all-frame processing, completion, and retained final scores. A real-model
+Flask upload smoke test also completed successfully on a derived 16-frame AVI
+using actual MobileNet/logistic and YOLO/ByteTrack weights; no webcam was opened.
+The dashboard's embedded JavaScript passed syntax checking. Browser/manual
+verification of the new chooser is pending a restart of the running server.
+The optional React frontend has not received these source controls.
+
+## User-controlled demo alert threshold
+
+The user requested that the built-in Settings slider control demo alerts
+instead of person confidence. The initial alert threshold is now 70%. Moving
+the slider enables alerts and rechecks valid evidence immediately; a 73.9%
+Fight score therefore creates an alert when the slider is set to 70%, including
+after an upload has completed. Classification remains at 0.5 and YOLO confidence
+at its separate configured setting. No model was retrained or recalibrated.
+
+The new `/api/alert-threshold` endpoint validates the setting. Stale live
+scores and cleared/idle sources cannot create alerts. Entries are generated
+on crossing into the qualifying state rather than on every update, and retain
+their creation threshold and whole-video/rolling scope. Raising the slider
+does not erase history. Slider requests are debounced and serialized so the
+last selected setting wins. Twenty-four integration tests passed, including
+threshold boundaries, immediate rechecking, source freshness, and deduplication.
+These are demo controls, not evidence of validated real-world alert performance.
 
 ## Ethical and practical limitation
 

@@ -32,7 +32,7 @@ def test_person_detector():
         assert initial["person_count"] == 0
         assert initial["model"] == "YOLO11n (COCO pretrained)"
         assert isinstance(initial["action_model_ready"], bool)
-        assert initial["violence_confidence"] == 0.0
+        assert initial["violence_confidence"] is None
         print("PASS: YOLO person detector loaded")
         return True
     except Exception as error:

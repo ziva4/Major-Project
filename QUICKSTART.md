@@ -1,192 +1,69 @@
-> **Status update (1 November 2026):** This guide contains historical demo/setup
-> material, including claims that do not describe the current implementation.
-> The runtime uses YOLO11n/ByteTrack with an optional PyTorch CNN/LSTM model.
-> The selected offline experiment is MobileNetV3 feature pooling + logistic
-> regression (76.00% test accuracy, 74.74% test F1); dashboard integration is
-> pending. KNN reached 74.56% validation F1 and has no test result.
-> Use [README.md](README.md) for current setup/next steps and
-> [ML_TRAINING_EXPERIMENT.md](ML_TRAINING_EXPERIMENT.md) for the experiment record.
+# Quick start: current Flask dashboard
 
-# Quick Start Guide - Violence Detection System
+Updated **7 November 2026**. Use this guide for the integrated logistic model.
+Historical TensorFlow/LSTM auto-training instructions no longer apply.
 
-## 🚀 Get Running in 5 Minutes
+## Start on this laptop
 
-### For Windows Users:
-1. Navigate to the `backend` folder
-2. Double-click `run.bat`
-3. Wait for model training (first run only)
-4. Open http://localhost:5000 in your browser
+Run in PowerShell:
 
-### For Linux/macOS Users:
-```bash
-cd backend
-./run.sh
+```powershell
+& "C:\Users\Shiva\OneDrive\문서\Major Project\Major-Project\backend\.venv-inference\Scripts\python.exe" -X utf8 "C:\Users\Shiva\OneDrive\문서\Major Project\Major-Project\backend\app.py"
 ```
 
-## 📊 What You'll See
+Open **http://127.0.0.1:5000**. Keep the terminal open.
+Press Ctrl+C and rerun the command to load code changes.
 
-1. **Live Camera Feed** - Real-time video from your PC camera
-2. **Confidence Bar** - Shows violence detection level (0-100%)
-3. **Status Indicator** - Green (Safe) or Red (Danger)
-4. **Alerts List** - All detected incidents with timestamps
-5. **Settings Panel** - Adjust sensitivity with slider
+## Choose a source
 
-## 🎮 Try It Out
+- **Start live detection:** opens the configured camera. Allow a full five-second
+  window plus inference time for the first score.
+- **Upload and detect:** choose MP4/AVI/MOV/MKV/WebM, up to a 256 MB request.
+  View one whole-video Fight score and frame-by-frame person tracking.
+  Pause/resume/stop are available; CPU processing can slow playback.
 
-### To Test Normal Activity:
-- Wave at camera normally
-- Move around calmly
-- Should stay green with low confidence
+The camera stays off until selected. Changing source resets tracking and alert history.
 
-### To Simulate High Confidence:
-- Make rapid, sudden movements
-- Wave hands quickly and aggressively
-- Camera feed should turn red if confidence > threshold
+## Create demo alerts
 
-### Alert Acknowledgment:
-- When alert appears, click "ACKNOWLEDGE"
-- Status changes from "ACTIVE" to "ACKNOWLEDGED"
+Move the **Settings / Demo alert threshold** slider. This enables demo alerts
+at the selected percentage (initial 70%). A score at or above the percentage
+creates an entry in Recent Demo Alerts, including a valid completed-upload
+score. Repeated above-threshold updates do not flood the list with duplicates.
 
-## ⚙️ Configuration
+The slider does **not** control person detection. Fight class prediction uses
+50%; the separate person-confidence setting also defaults to 50%.
+A 73.9% Fight score creates an alert at 70%, but not at 80%.
+No police or other external notification is sent.
 
-### Adjust Sensitivity:
-- **Dashboard**: Use confidence slider (0-100%)
-- **Default**: 60% (balanced between detection and false positives)
-- **High Security**: 40-50% (more alerts)
-- **High Tolerance**: 70-80% (fewer alerts)
+## Test clips already on this laptop
 
-### Change Port (if 5000 is busy):
-Edit `backend/app.py`, line ~105:
-```python
-socketio.run(app, host='0.0.0.0', port=5001)  # Change 5000 to your port
-```
+Browse to:
 
-## 📁 Key Files
+`C:\Users\Shiva\OneDrive\문서\Major Project\Major-Project\backend\data\local_checks\more_validation`
 
-| File | Purpose |
-|------|---------|
-| `app.py` | Main Flask server |
-| `video_processor.py` | Camera & detection processing |
-| `train_model.py` | ML model training |
-| `templates/index.html` | Dashboard interface |
+| Filename | Recorded local Fight score |
+| --- | ---: |
+| NonFight_2.avi | 27.3270% |
+| NonFight_3.avi | 13.2987% |
+| Fight_2.avi | 75.8319% |
+| Fight_3.avi | 84.4469% |
 
-## 🔧 Troubleshooting
+At a 70% demo threshold the two Fight clips qualify. These are selected
+validation examples, not an independent accuracy test. Another earlier
+NonFight clip scored about 74.01%, a documented false positive.
 
-### Camera Not Working?
-- Check if camera is plugged in
-- Check Windows/macOS privacy settings
-- Try index 1 in `video_processor.py` line 20: `self.cap = cv2.VideoCapture(1)`
+## If something fails
 
-### Port Already in Use?
-- Change port number in `app.py`
-- Or: `lsof -i :5000` (macOS) / `netstat -ano | findstr :5000` (Windows)
+- Use the exact environment executable, not the broken plain `python` alias.
+- Install matching packages using `backend/requirements-dashboard.txt`;
+  scikit-learn must be 1.6.1 and ByteTrack needs `lap`.
+- Check model error/wait messages instead of assuming Unavailable means 0%.
+- Confirm the exported bundle exists at `backend/models/mobilenet_logistic/`.
+- Close other camera applications or use `--camera 1` if needed.
+- Ensure only one server uses port 5000.
+- Use port 5000; the older React UI on port 3000 lacks the new controls.
 
-### Model Training Stuck?
-- Check internet connection (downloading TensorFlow)
-- Increase available RAM
-- Try reducing samples: change `samples=500` in `train_model.py`
-
-### High CPU Usage?
-- Reduce frame resolution in `video_processor.py` line 23
-- Lower FPS with sleep increase in line 62
-
-## 📈 Performance Tips
-
-For Better Speed:
-```
-✓ Close other applications
-✓ Increase threshold (fewer detections)
-✓ Use good lighting for camera
-✓ Use dedicated GPU (if available)
-```
-
-For Better Accuracy:
-```
-✓ Lower threshold (more detections)
-✓ Retrain with real violence/normal data
-✓ Improve camera angle and focus
-✓ Ensure 60+ FPS camera feed
-```
-
-## 📝 Understanding the Dashboard
-
-### Status Indicator Colors:
-- 🟢 **Green** = Safe (Normal activity)
-- 🔴 **Red** = Warning (Violence detected)
-
-### Confidence Bar:
-- **0-30%** = Definitely safe
-- **30-60%** = Suspicious activity
-- **60-100%** = High confidence violence
-
-### Alerts Table Columns:
-- **Time** = When violence was detected
-- **Confidence** = Detection certainty (%)
-- **Status** = ACTIVE or ACKNOWLEDGED
-- **Acknowledge** = Button to mark as reviewed
-
-## 🎯 Next Steps
-
-1. **First Run**: Just observe normal activity
-2. **Test Sensitivity**: Adjust slider to find optimal threshold
-3. **Train Your Model**: Replace synthetic data with real videos
-4. **Deploy**: Run on dedicated surveillance PC
-5. **Police Integration**: Connect to actual police systems (advanced)
-
-## 📞 Support Resources
-
-- **Error in Console?** Read the error message carefully
-- **Model Not Training?** Check internet + RAM
-- **Camera Issues?** Grant camera permissions in Settings
-- **Still Stuck?** Contact technical support with:
-  - Error message
-  - Your OS and Python version
-  - What you were doing when it broke
-
-## 📊 System Requirements Checklist
-
-- [ ] Python 3.8+ installed
-- [ ] Webcam connected and working
-- [ ] Internet connection (for first setup)
-- [ ] 4GB+ RAM available
-- [ ] 2GB free disk space
-- [ ] Port 5000 available
-
-## 🎓 Learning Resources
-
-### Understanding the Model:
-1. Features extracted from each frame (color, texture, motion)
-2. Neural network classifies: Normal (0) or Violent (1)
-3. Confidence score from 0-1 is converted to percentage
-4. Smoothing across 5 frames reduces false positives
-
-### Custom Training:
-1. Collect 500+ videos of violence
-2. Collect 500+ videos of normal activity
-3. Extract frames and label them
-4. Modify `train_model.py` to use real data
-5. Run training
-
-## 🔒 Security Notes
-
-⚠️ **Before Using in Real Surveillance:**
-- Enable HTTPS encryption
-- Add authentication/login
-- Encrypt stored alert data
-- Log all access and actions
-- Comply with local privacy laws
-- Get proper authorization
-
-## 🌟 Pro Tips
-
-1. **Multi-Camera Setup**: Run multiple instances on different ports
-2. **Always On**: Use `screen` or `tmux` on Linux to keep running
-3. **Remote Access**: Set `host='0.0.0.0'` and access from other devices
-4. **Backup Alerts**: Periodically export alert data
-5. **Test Regularly**: Verify system is working with test runs
-
----
-
-**Ready to go?** Run `run.bat` (Windows) or `./run.sh` (Linux/macOS) and open http://localhost:5000
-
-Good luck! 🚨
+See [README_SYSTEM.md](README_SYSTEM.md) for the handoff and
+[backend/LOCAL_INFERENCE.md](backend/LOCAL_INFERENCE.md) for detailed setup,
+test commands, clip results, and troubleshooting.

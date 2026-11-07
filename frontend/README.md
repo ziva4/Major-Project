@@ -1,20 +1,38 @@
-# React Dashboard
+# Optional React frontend
 
-This optional React frontend displays data supplied by the local Flask /
-Socket.IO backend. The backend performs person tracking and, when its PyTorch
-checkpoint is installed, possible-violence scoring. The frontend does not train
-or load the machine-learning model itself.
+Last updated: **7 November 2026**.
 
-## Start development
+This directory contains the older optional React dashboard. The working demo
+is the **built-in Flask dashboard at http://127.0.0.1:5000**, implemented in
+`backend/templates/index.html`. See [the main README](../README.md) for startup.
 
-Start the backend first:
+## What this React source currently does
 
-```powershell
-cd backend
-python app.py
-```
+- Connects to the backend through Socket.IO at localhost:5000.
+- Displays the MJPEG feed, highest person confidence, person-presence status,
+  processed-frame count and person count.
+- Polls the alert list and sends acknowledgement requests.
+- Its older slider still calls `POST /api/threshold` for person confidence.
+  This is different from the current Flask UI's **demo alert** slider.
 
-Then start React in a second terminal:
+## What is not implemented here yet
+
+The current React components do not expose live/upload source selection,
+upload progress, pause/resume/stop controls, logistic Fight-score/readiness
+states, or the new demo-alert slider. Do not claim feature parity.
+
+The backend now starts idle and does not open the camera automatically. This
+React app cannot start a source itself until those controls are added; a source
+can be selected using the built-in Flask dashboard for development.
+
+The React frontend does not load/train the ML model. Logistic inference is in
+`backend/logistic_model.py`, called by the backend processor. The old instruction
+to deploy an LSTM `.pt` checkpoint does not apply to the current backend.
+
+## Development
+
+Start the backend using the environment and command in
+[LOCAL_INFERENCE.md](../backend/LOCAL_INFERENCE.md). Then:
 
 ```powershell
 cd frontend
@@ -22,43 +40,17 @@ npm install
 npm start
 ```
 
-Open <http://localhost:3000>.
+React serves at http://localhost:3000 and currently hardcodes backend URLs.
+Its build/test scripts are in `package.json`; no React build was run for the
+recent backend/Flask-template work.
 
-## Backend connection
+## If React parity is requested
 
-The development frontend expects `http://localhost:5000`. It receives Socket.IO
-`detection_update` events and uses the REST endpoints documented in
-[../API_REFERENCE.md](../API_REFERENCE.md).
+Use [API_REFERENCE.md](../API_REFERENCE.md) to add source selection/upload and
+playback controls. Display person confidence separately from Fight score.
+Handle null scores and idle/warmup/stale/error states explicitly. Wire the
+demo slider to `POST /api/alert-threshold` and `violence_threshold`; never use
+person confidence for that control. Keep whole-video upload scores distinct
+from five-second live scores.
 
-It can show the MJPEG camera feed, person boxes/ByteTrack IDs, current person
-count, model readiness, possible-violence score, and alerts.
-
-## Action-model integration
-
-As of 1 November 2026, the selected offline experiment is MobileNetV3 feature
-pooling + logistic regression, with 76.00% test accuracy and 74.74% test F1.
-It is saved in Google Drive but is **not integrated into the backend or this
-frontend**. The instructions below apply only to the existing CNN/LSTM runtime.
-The `.joblib` classifier cannot replace the `.pt` checkpoint directly.
-
-Next steps are to add the matching backend feature/classifier wrapper, validate
-live clip sampling and alert thresholds, and update the UI's model readiness,
-score, and review state. See [the project next steps](../README.md#next-steps)
-and [experiment record](../ML_TRAINING_EXPERIMENT.md).
-
-To enable possible-violence scoring, install the selected PyTorch checkpoint at:
-
-```text
-../backend/models/violence_action_model.pt
-```
-
-The current RWF-2000 baseline uses a 16-frame MobileNetV3 + LSTM checkpoint.
-Its runtime configuration is saved inside the `.pt` file and read by the
-backend at startup. See [../ML_TRAINING_EXPERIMENT.md](../ML_TRAINING_EXPERIMENT.md)
-for the reported metrics.
-
-## Important limitation
-
-The possible-violence score is a model prediction, not confirmation of
-violence. Keep human review in the workflow and do not use this prototype for
-automated enforcement or high-stakes decisions.
+The user has not asked to replace the working Flask dashboard with React.

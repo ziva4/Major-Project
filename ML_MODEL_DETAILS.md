@@ -1,8 +1,8 @@
 # Violence-Action Model Details
 
-This document describes the PyTorch CNN/LSTM model supported by the current
-dashboard runtime. It replaces the earlier TensorFlow/Keras synthetic-data
-demo, which is not used by that runtime.
+This document records the selected classifier and the historical CNN/LSTM architecture.
+As of 7 November 2026 the built-in dashboard uses the logistic-regression
+pipeline described below. The LSTM and TensorFlow examples are historical.
 
 ## Selected offline classifier (1 November 2026)
 
@@ -19,7 +19,8 @@ pooling and logistic regression:
 It uses original ImageNet CNN weights, not the later fine-tuned CNN. Frame
 order is discarded by pooling. The selected scaler/classifier is a `.joblib`
 pipeline; a matching feature extractor and preprocessing metadata are required
-for inference. It is **not yet integrated into the dashboard**.
+for inference. It is **integrated into the built-in Flask dashboard**. See
+[local inference](backend/LOCAL_INFERENCE.md) for setup and migration checks.
 
 | Method | Validation F1 | Test accuracy | Test precision | Test recall | Test F1 |
 | --- | ---: | ---: | ---: | ---: | ---: |
@@ -38,9 +39,9 @@ baseline's exact validation membership could not be recovered. The test set
 contains 400 official `val` clips. All reported classification metrics use
 threshold 0.5; that threshold is not a validated live alert policy.
 See [ML_TRAINING_EXPERIMENT.md](ML_TRAINING_EXPERIMENT.md) for histories,
-artifact paths, limitations, and deferred runtime integration.
+artifact paths, limitations, and the completed runtime integration record.
 
-## Existing CNN/LSTM runtime
+## Historical CNN/LSTM runtime (superseded)
 
 ## Purpose
 

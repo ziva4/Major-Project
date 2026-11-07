@@ -1,0 +1,6 @@
+# Standalone logistic video inference; does not start Flask or YOLO.
+# Install a compatible torch/torchvision pair for your platform separately.
+scikit-learn==1.6.1
+joblib>=1.4,<2
+numpy>=1.24.3,<3
+opencv-python>=4.8,<5

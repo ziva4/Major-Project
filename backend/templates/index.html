@@ -3,9 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Person Detection Dashboard</title>
+    <title>Video Review Dashboard</title>
     <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
     <style>
+        .source-picker { background: #0d192b; padding: 22px; border-radius: 10px; margin-bottom: 20px; }
+        .source-options { display: flex; flex-wrap: wrap; gap: 18px; margin-top: 16px; }
+        .source-option { flex: 1; min-width: 240px; padding: 16px; border: 1px solid #65718a; border-radius: 8px; }
+        .source-option h3 { margin-bottom: 10px; }
+        .source-option p { font-size: 13px; color: #c5cddd; margin-bottom: 14px; }
+        .source-button { padding: 10px 16px; border: 0; border-radius: 5px; cursor: pointer; background: #ffb400; color: #10203a; font-weight: bold; margin: 8px 8px 0 0; }
+        .source-button:disabled { opacity: 0.5; cursor: wait; }
+        .source-option input { max-width: 100%; }
+        #source-message { margin-top: 16px; color: #d7e3f5; }
+        #source-progress { width: 100%; margin-top: 10px; }
+        [hidden] { display: none !important; }
         * {
             margin: 0;
             padding: 0;
@@ -392,20 +403,42 @@
     <div class="container">
         <header>
             <div>
-                <h1>PERSON DETECTION DASHBOARD</h1>
-                <p style="font-size: 12px; color: #aaa; margin-top: 5px;">Pretrained YOLO person detector</p>
+                <h1>VIDEO REVIEW DASHBOARD</h1>
+                <p style="font-size: 12px; color: #aaa; margin-top: 5px;">Person tracking and possible-violence review</p>
             </div>
             <div class="status-indicator">
-                <span id="status-text">Monitoring...</span>
+                <span id="status-text">Choose a video source</span>
                 <div class="status-dot safe" id="status-dot"></div>
             </div>
         </header>
 
-        <div class="main-content">
+        <section class="source-picker" aria-labelledby="source-heading">
+            <h2 id="source-heading">How would you like to detect?</h2>
+            <p style="margin-top: 8px;">Choose the live camera or upload a video. Detection starts after you choose.</p>
+            <div class="source-options">
+                <div class="source-option">
+                    <h3>Live camera</h3>
+                    <p>Track people and score a rolling five-second window from your webcam.</p>
+                    <button type="button" id="start-live" class="source-button">Start live detection</button>
+                </div>
+                <div class="source-option">
+                    <h3>Upload video</h3>
+                    <p>MP4, AVI, MOV, MKV or WebM, up to 256 MB. Shows a whole-video Fight score and person tracking.</p>
+                    <input type="file" id="upload-video" accept=".mp4,.avi,.mov,.mkv,.webm" aria-label="Choose a video to analyse">
+                    <button type="button" id="start-upload" class="source-button">Upload and detect</button>
+                </div>
+            </div>
+            <div id="source-message" role="status" aria-live="polite">No source selected. The camera is off.</div>
+            <progress id="source-progress" max="1" value="0" hidden aria-label="Uploaded video processing progress"></progress>
+            <button type="button" id="pause-source" class="source-button" hidden>Pause video</button>
+            <button type="button" id="stop-source" class="source-button" hidden>Stop detection</button>
+        </section>
+
+        <div class="main-content" id="detection-content" hidden>
             <div class="video-panel">
-                <div class="video-title">📹 Live Camera Feed</div>
+                <div class="video-title" id="video-title">Video feed</div>
                 <div class="video-container">
-                    <img class="video-feed" id="video-stream" src="/video_feed" alt="Video Stream">
+                    <img class="video-feed" id="video-stream" alt="Annotated detection video">
                     <div class="video-overlay">
                         <div class="confidence-display">
                             <div style="font-size: 14px; color: #aaa;">Highest Person Confidence</div>
@@ -419,14 +452,28 @@
             </div>
 
             <div class="controls-panel">
+                <div class="control-section" aria-live="polite">
+                    <h3>ACTION MODEL</h3>
+                    <p id="action-model">Loading model status...</p>
+                    <p id="action-status" style="margin-top: 8px;">Waiting for camera data</p>
+                    <p style="margin-top: 12px;">Fight score: <strong id="fight-score">Unavailable</strong></p>
+                    <p id="clip-class" style="margin-top: 8px;"></p>
+                    <p id="sampling-info" style="margin-top: 8px;"></p>
+                    <p id="alert-policy" style="margin-top: 8px;"></p>
+                    <p id="model-error" style="color: #ffb0b0; margin-top: 8px;"></p>
+                    <p style="font-size: 12px; color: #ccc; margin-top: 12px;">A model score is not confirmation of violence. Review the footage.</p>
+                </div>
+                <p style="margin-bottom: 10px;">Demo alert threshold</p>
+                <p style="font-size: 12px; color: #ccc; margin-bottom: 10px;">Move the slider to enable demo alerts. Fight scores at or above this percentage create a review alert.</p>
                 <div class="control-section">
                     <h3>⚙️ SETTINGS</h3>
                     <div class="threshold-control">
                         <span style="font-size: 12px; min-width: 40px;">Low</span>
-                        <input type="range" id="threshold-slider" min="0" max="100" value="60">
+                        <input type="range" id="threshold-slider" min="0" max="100" value="70" aria-label="Demo alert threshold">
                         <span style="font-size: 12px; min-width: 40px;">High</span>
                     </div>
-                    <div class="threshold-value" id="threshold-display">60%</div>
+                    <div class="threshold-value" id="threshold-display">70%</div>
+                    <p id="threshold-message" role="status" style="font-size: 12px; margin-top: 8px;"></p>
                 </div>
 
                 <div class="control-section">
@@ -448,7 +495,7 @@
         <div class="alerts-section">
             <div class="alerts-title">
                 <span class="alert-icon">🚨</span>
-                RECENT ALERTS (Police Dispatch)
+                RECENT DEMO ALERTS — HUMAN REVIEW
             </div>
             <div class="alerts-list" id="alerts-list">
                 <div style="text-align: center; color: #aaa; padding: 20px;">
@@ -460,26 +507,88 @@
 
     <div class="connection-status">
         <div class="connection-dot" id="connection-dot"></div>
-        <span id="connection-text">Connected</span>
+        <span id="connection-text">Connecting...</span>
     </div>
 
     <script>
-        const socket = io();
+        const socket = typeof io === 'function' ? io() : null;
         let currentData = {};
         let allAlerts = [];
+        let sourceBusy = false;
+        let sourceRevision = null;
+        let sourcePaused = false;
+        let sourceError = null;
+        let pendingAlertThreshold = null;
+        let thresholdUpdateRunning = false;
+        let thresholdTimer = null;
+
+        function setSourceBusy(busy) {
+            sourceBusy = busy;
+            for (const id of ['start-live', 'start-upload', 'upload-video', 'stop-source', 'pause-source']) {
+                document.getElementById(id).disabled = busy;
+            }
+        }
+
+        async function sourceRequest(url, body) {
+            if (sourceBusy) return;
+            setSourceBusy(true);
+            sourceError = null;
+            document.getElementById('source-message').textContent = 'Changing video source...';
+            try {
+                const options = {method: 'POST'};
+                if (body instanceof FormData) options.body = body;
+                else if (body) {
+                    options.headers = {'Content-Type': 'application/json'};
+                    options.body = JSON.stringify(body);
+                }
+                const response = await fetch(url, options);
+                const result = await response.json();
+                if (!response.ok) throw new Error(result.error || 'Could not change source.');
+                setSourceBusy(false);
+                await fetchDetection();
+                await fetchAlerts();
+            } catch (error) {
+                sourceError = error.message;
+                document.getElementById('source-message').textContent = error.message;
+            } finally {
+                setSourceBusy(false);
+            }
+        }
+
+        document.getElementById('start-live').addEventListener('click', () => sourceRequest('/api/source/live'));
+        document.getElementById('start-upload').addEventListener('click', () => {
+            const file = document.getElementById('upload-video').files[0];
+            if (!file) {
+                sourceError = 'Choose a video file first.';
+                document.getElementById('source-message').textContent = sourceError;
+                return;
+            }
+            if (file.size > 256 * 1024 * 1024) {
+                sourceError = 'Choose a video smaller than 256 MB.';
+                document.getElementById('source-message').textContent = sourceError;
+                return;
+            }
+            const form = new FormData();
+            form.append('video', file);
+            sourceRequest('/api/source/upload', form);
+        });
+        document.getElementById('stop-source').addEventListener('click', () => sourceRequest('/api/source/stop'));
+        document.getElementById('pause-source').addEventListener('click', () => sourceRequest(
+            '/api/source/playback', {action: sourcePaused ? 'resume' : 'pause'}
+        ));
 
         // WebSocket Connection
-        socket.on('connect', () => {
+        socket?.on('connect', () => {
             console.log('Connected to server');
             updateConnectionStatus(true);
         });
 
-        socket.on('disconnect', () => {
+        socket?.on('disconnect', () => {
             console.log('Disconnected from server');
             updateConnectionStatus(false);
         });
 
-        socket.on('detection_update', (data) => {
+        socket?.on('detection_update', (data) => {
             currentData = data;
             updateUI(data);
         });
@@ -497,22 +606,86 @@
         }
 
         function updateUI(data) {
+            currentData = data;
+            const active = data.source_kind !== 'none' && !['idle', 'stopped'].includes(data.source_state);
+            const isUpload = data.source_kind === 'upload';
+            sourcePaused = data.source_state === 'paused';
+            document.getElementById('detection-content').hidden = !active;
+            document.getElementById('stop-source').hidden = !active;
+            const pause = document.getElementById('pause-source');
+            pause.hidden = !isUpload || !['running', 'paused'].includes(data.source_state);
+            pause.textContent = sourcePaused ? 'Resume video' : 'Pause video';
+            const progress = document.getElementById('source-progress');
+            progress.hidden = !isUpload || !active;
+            progress.value = data.source_progress || 0;
+            if (!sourceBusy) {
+                const messages = {
+                    idle: 'No source selected. The camera is off.', stopped: 'Detection stopped. Choose another source.',
+                    analysing: 'Analysing the uploaded video...', running: isUpload ? 'Processing video frames...' : 'Live camera detection is running.',
+                    paused: 'Video paused.', completed: 'Video processing completed.', error: 'Video processing could not finish.'
+                };
+                let message = messages[data.source_state] || 'Choose a source.';
+                if (isUpload && active) message += ' ' + data.source_name + ' — ' + Math.round((data.source_progress || 0) * 100) + '%';
+                document.getElementById('source-message').textContent = sourceError || message;
+            }
+            document.getElementById('video-title').textContent = isUpload ? 'Uploaded video: ' + data.source_name : 'Live camera feed';
+            const stream = document.getElementById('video-stream');
+            if (active && sourceRevision !== data.source_revision) {
+                stream.src = '/video_feed?source=' + data.source_revision;
+                sourceRevision = data.source_revision;
+            } else if (!active) {
+                stream.removeAttribute('src');
+                sourceRevision = null;
+            }
             // Update confidence
             const confidence = data.confidence * 100;
             document.getElementById('confidence-text').textContent = confidence.toFixed(2) + '%';
             document.getElementById('confidence-fill').style.width = confidence + '%';
+            document.getElementById('confidence-fill').textContent = confidence.toFixed(0) + '%';
+
+            const score = data.violence_confidence;
+            const hasScore = typeof score === 'number' && Number.isFinite(score);
+            document.getElementById('action-model').textContent = data.action_model || 'Action model unavailable';
+            const states = {
+                warming_up: 'Collecting a full video window...', ready: 'Score available',
+                stale: 'Waiting for a fresh score', unavailable: 'Model could not load',
+                error: 'Prediction unavailable', idle: 'Choose Live camera or Upload video to start'
+            };
+            document.getElementById('action-status').textContent =
+                (data.action_status === 'warming_up' || data.action_status === 'stale')
+                    ? (data.action_wait_reason || states[data.action_status])
+                    : (states[data.action_status] || 'Waiting for data');
+            document.getElementById('fight-score').textContent = hasScore ? (score * 100).toFixed(1) + '%' : 'Unavailable';
+            document.getElementById('clip-class').textContent = hasScore
+                ? 'Clip prediction: ' + (score >= data.classification_threshold ? 'Fight' : 'NonFight') + ' (classification threshold 50%)'
+                : '';
+            document.getElementById('sampling-info').textContent = isUpload
+                ? 'Whole-video score from 16 uniformly sampled frames. Person tracking processes frames in order; playback may be slower than real time.'
+                : '16 frames across ' + data.action_window_seconds
+                + ' seconds | Camera: ' + (data.capture_fps || 0) + ' FPS | Person detector: '
+                + (data.inference_fps || 0) + ' FPS';
+            document.getElementById('alert-policy').textContent = data.alerts_enabled
+                ? 'Demo alerts enabled at ' + (data.violence_threshold * 100).toFixed(0) + '%; threshold not validated'
+                : 'Move the demo alert slider to enable review alerts';
+            document.getElementById('model-error').textContent = data.action_error || data.processing_error || '';
+            if (document.activeElement !== document.getElementById('threshold-slider')
+                    && pendingAlertThreshold === null && !thresholdUpdateRunning) {
+                const threshold = Math.round(data.violence_threshold * 100);
+                document.getElementById('threshold-slider').value = threshold;
+                document.getElementById('threshold-display').textContent = threshold + '%';
+            }
 
             // Update status indicator
             const statusDot = document.getElementById('status-dot');
             const statusText = document.getElementById('status-text');
-            if (data.human_detected) {
+            if (data.is_violence_detected) {
                 statusDot.classList.remove('safe');
                 statusDot.classList.add('danger');
-                statusText.textContent = 'Person detected';
+                statusText.textContent = 'Possible violence — review footage';
             } else {
                 statusDot.classList.remove('danger');
                 statusDot.classList.add('safe');
-                statusText.textContent = 'No people detected';
+                statusText.textContent = !active ? 'Choose a video source' : data.human_detected ? 'People detected — monitoring' : 'No people detected';
             }
 
             // Update stats
@@ -520,17 +693,41 @@
             document.getElementById('alert-count').textContent = data.person_count;
         }
 
-        // Threshold slider
-        document.getElementById('threshold-slider').addEventListener('input', (e) => {
-            const value = e.target.value;
-            const percent = value / 100;
-            document.getElementById('threshold-display').textContent = value + '%';
+        // Debounce slider movement and serialize updates so the final value wins.
+        async function saveAlertThreshold() {
+            if (thresholdUpdateRunning) return;
+            thresholdUpdateRunning = true;
+            try {
+                while (pendingAlertThreshold !== null) {
+                    const value = pendingAlertThreshold;
+                    pendingAlertThreshold = null;
+                    const response = await fetch('/api/alert-threshold', {
+                        method: 'POST', headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({threshold: value / 100})
+                    });
+                    const result = await response.json();
+                    if (!response.ok) throw new Error(result.error || 'Could not save alert threshold.');
+                    document.getElementById('threshold-message').textContent =
+                        'Demo alerts enabled at ' + Math.round(result.threshold * 100) + '%.';
+                }
+                await fetchDetection();
+                await fetchAlerts();
+            } catch (error) {
+                document.getElementById('threshold-message').textContent = error.message;
+            } finally {
+                thresholdUpdateRunning = false;
+                // Handle movement arriving while the final refresh was in flight.
+                if (pendingAlertThreshold !== null) saveAlertThreshold();
+            }
+        }
 
-            fetch('/api/threshold', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({threshold: percent})
-            });
+        document.getElementById('threshold-slider').addEventListener('input', (e) => {
+            const value = Number(e.target.value);
+            document.getElementById('threshold-display').textContent = value + '%';
+            document.getElementById('threshold-message').textContent = 'Saving demo alert threshold...';
+            pendingAlertThreshold = value;
+            clearTimeout(thresholdTimer);
+            thresholdTimer = setTimeout(saveAlertThreshold, 200);
         });
 
         // Fetch alerts periodically
@@ -562,6 +759,7 @@
                         <div class="alert-details">
                             <div class="alert-time">${time}</div>
                             <div class="alert-confidence">Confidence: ${(alert.confidence * 100).toFixed(1)}%</div>
+                            <div class="alert-frame">Alert threshold: ${Math.round((alert.threshold ?? 0.7) * 100)}% | ${alert.score_scope === 'whole_video' ? 'Whole video' : 'Rolling window'}</div>
                         </div>
                         <div style="display: flex; align-items: center; gap: 10px;">
                             <div class="alert-status ${isAcknowledged ? 'acknowledged' : ''}">${alert.status}</div>
@@ -585,6 +783,22 @@
 
         // Initial data fetch
         fetchAlerts();
+        async function fetchDetection() {
+            try {
+                const response = await fetch('/api/detection');
+                if (!response.ok) throw new Error('Backend unavailable');
+                updateUI(await response.json());
+                updateConnectionStatus(true);
+            } catch (error) {
+                updateConnectionStatus(false);
+                document.getElementById('fight-score').textContent = 'Unavailable';
+                document.getElementById('action-status').textContent = 'Connection lost';
+                document.getElementById('clip-class').textContent = '';
+            }
+        }
+        // REST polling also keeps the dashboard usable if Socket.IO is unavailable.
+        setInterval(fetchDetection, 1000);
+        fetchDetection();
     </script>
 </body>
 </html>

@@ -1,37 +1,14 @@
 @echo off
-REM Violence Detection System - Startup Script for Windows
-
-echo 🚨 Violence Detection Surveillance System
-echo ===========================================
-echo.
-
-REM Check Python version
-echo Checking Python installation...
-python --version
-
-REM Create or repair virtual environment if needed
-if not exist "venv\pyvenv.cfg" (
-    echo Creating virtual environment...
-    python -m venv venv
+setlocal
+cd /d "%~dp0"
+if not exist ".venv-inference\Scripts\python.exe" (
+    py -3 -m venv --system-site-packages .venv-inference
+    if errorlevel 1 exit /b 1
+    .venv-inference\Scripts\python.exe -X utf8 -m pip install -r requirements-dashboard.txt
+    if errorlevel 1 exit /b 1
 )
-
-REM Activate virtual environment
-echo Activating virtual environment...
-call venv\Scripts\activate.bat
-
-REM Install dependencies
-echo Installing dependencies...
-pip install -r requirements.txt
-
-REM Start Flask server
-echo.
-echo Starting Person Detection Dashboard...
-echo The pretrained YOLO model downloads once on first startup.
-echo 📊 Dashboard: http://localhost:5000
-echo 🎥 Camera Feed: http://localhost:5000/video_feed
-echo.
-echo Press Ctrl+C to stop the server
-echo.
-
-python app.py
+echo Dashboard: http://127.0.0.1:5000
+echo Press Ctrl+C to stop the camera and server.
+.venv-inference\Scripts\python.exe -X utf8 app.py %*
 pause
+exit /b

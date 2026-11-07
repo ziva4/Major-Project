@@ -15,10 +15,12 @@ the original notebook's split. See the [experiment record](../ML_TRAINING_EXPERI
 for exact settings, per-epoch results, saved files, and limitations.
 
 Artifacts are in Drive under `ViolenceDetection/experiments/` and
-`ViolenceDetection/KNN_Experiment/`. The selected `.joblib` pipeline is not
-compatible with the current `.pt` runtime. Exporting/verifying the final bundle
-and notebook, then integrating the selected classifier into the backend and
-dashboard, are pending next steps. Do not retune using the reported test results.
+`ViolenceDetection/KNN_Experiment/`. The selected `.joblib` pipeline and matching CNN weights have now been exported,
+loaded locally, checked against Colab scores, and integrated into the built-in
+Flask dashboard (7 November 2026). These older training commands target the
+LSTM, not the selected logistic pipeline. Full later-notebook export remains
+unconfirmed. See [LOCAL_INFERENCE.md](LOCAL_INFERENCE.md) for current setup.
+Do not retune using the reported test results.
 
 The app's YOLO model detects and tracks people. The optional CNN/LSTM model
 scores a **short video clip** as `normal` or `possible violence`; it does not
